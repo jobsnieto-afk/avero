@@ -295,23 +295,9 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
   const { scrollYProgress } = useScroll();
 
-  const heroScale = useTransform(
-    scrollYProgress,
-    [0, 0.24],
-    [0.78, 1.02]
-  );
-
-  const heroY = useTransform(
-    scrollYProgress,
-    [0, 0.24],
-    [180, -20]
-  );
-
-  const heroRotateX = useTransform(
-    scrollYProgress,
-    [0, 0.24],
-    [18, 0]
-  );
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [0.82, 1]);
+  const heroY = useTransform(scrollYProgress, [0, 0.2], [120, 0]);
+  const heroRotateX = useTransform(scrollYProgress, [0, 0.2], [0, 0]);
 
   const heroOpacity = useTransform(
     scrollYProgress,
@@ -356,7 +342,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
         </nav>
       </header>
 
-      <section className="relative min-h-[180vh] overflow-hidden bg-[#f6f3ee] px-6 pt-32 text-center text-slate-950">
+      <section className="relative min-h-[150vh] overflow-hidden bg-[#f6f3ee] px-6 pt-28 text-center text-slate-950">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-20 h-[760px] w-[1120px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.24),transparent_62%)]" />
 
@@ -373,7 +359,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           <h1 className="mx-auto max-w-6xl text-6xl font-semibold tracking-[-0.06em] md:text-8xl lg:text-9xl">
             Tu dinero,
             <span className="block text-slate-500">
-              por fin claro.
+               por fin claro.
             </span>
           </h1>
 
@@ -397,12 +383,9 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           </div>
         </div>
 
-        <div className="sticky top-16 mx-auto mt-24 max-w-[1280px] px-4 pb-72 [perspective:2200px]">
+        <div className="sticky top-24 mx-auto mt-16 max-w-[1180px] px-4 pb-40 [perspective:1600px]">
           <motion.div
-          whileHover={{
-            rotateY: 6,
-            scale: 1.035,
-          }}
+         
           transition={{
             type: "spring",
             stiffness: 120,
@@ -469,7 +452,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
     <div>
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-300">
-        Personal + Business
+        Personal + Empresa
       </p>
 
       <h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-6xl">
@@ -770,7 +753,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
         </p>
 
         <p className="text-sm text-slate-500">
-          Financial OS
+          Sistema Financiero Personal y Empresarial
         </p>
       </div>
     </div>
