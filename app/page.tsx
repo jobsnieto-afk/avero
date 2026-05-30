@@ -116,7 +116,7 @@ function DashboardMockup() {
             <div>
               <p className="text-sm font-semibold">AVERO</p>
               <p className="text-xs text-slate-500">
-                Financial OS
+                Sistema Financiero Personal y Empresarial
               </p>
             </div>
           </div>
@@ -206,6 +206,7 @@ function DashboardMockup() {
                   <p className="mt-1 text-xl font-semibold">
                     Últimos 12 meses
                   </p>
+                  
                 </div>
 
                 <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
@@ -346,17 +347,14 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="fixed left-0 right-0 top-4 z-50 px-4">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-slate-950/75 px-5 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-slate-950/75 px-5 py-1 shadow-2xl shadow-black/30 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">
-              A
-            </div>
-
-            <span className="text-lg font-semibold tracking-tight text-white">
-              AVERO
-            </span>
-          </div>
-
+          <img
+            src="/logo-avero.png"
+            alt="AVERO"
+            className="h-15 w-auto object-contain"
+          />
+</div>
           <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
             <a href="#producto" className="hover:text-white">
               Producto
@@ -397,8 +395,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
           <h1 className="mx-auto max-w-6xl text-6xl font-semibold tracking-[-0.06em] md:text-8xl lg:text-9xl">
             Tu dinero,
-            <span className="block text-slate-500">
-               por fin claro.
+            <span className="block text-slate-500">por fin claro.
             </span>
           </h1>
 
@@ -422,7 +419,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           </div>
         </div>
 
-        <div className="sticky top-24 mx-auto mt-16 max-w-[1050px] px-4 pb-40 [perspective:1600px]">
+        <div className="sticky top-24 mx-auto mt-12 max-w-[1050px] px-4 pb-40 [perspective:1600px]">
           <motion.div
          
           transition={{
@@ -773,15 +770,14 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 <footer className="border-t border-white/10 px-6 py-10 text-white">
   <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center">
     <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">
-        A
-      </div>
+      <img
+  src="/logo-avero.png"
+  alt="AVERO"
+  className="h-16 w-auto"
+
+/>
 
       <div>
-        <p className="font-semibold tracking-tight">
-          AVERO
-        </p>
-
         <p className="text-sm text-slate-500">
           Sistema Financiero Personal y Empresarial
         </p>

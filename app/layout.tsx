@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     title: "AVERO | Finanzas personales y empresariales",
     description:
       "Controla tu dinero personal y de negocio desde una sola plataforma.",
+      icons: {
+  icon: "/favicon.png",
+},
     url: "https://www.avero.pro",
     siteName: "AVERO",
     locale: "es_ES",
