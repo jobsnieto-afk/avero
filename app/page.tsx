@@ -9,6 +9,12 @@ import {
   Wallet,
   Building2,
   Check,
+  ListChecks,
+  PiggyBank,
+  Landmark,
+  Upload,
+  Users,
+  Coins,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -24,6 +30,38 @@ const transactions = [
   ["Seguro vehículo", "Gasto", "-£220", "text-rose-300"],
   ["Software", "Negocio", "-£49", "text-rose-300"],
   ["Reserva cliente", "Ingreso", "+£380", "text-cyan-300"],
+];
+const featureCards = [
+  {
+    title: "Movimientos",
+    text: "Registra ingresos y gastos con categorías, notas y filtros claros.",
+    icon: ListChecks,
+  },
+  {
+    title: "Presupuestos",
+    text: "Define límites mensuales y compara lo previsto con lo real.",
+    icon: PiggyBank,
+  },
+  {
+    title: "Balance",
+    text: "Controla activos, pasivos, deudas, efectivo e inversiones.",
+    icon: Landmark,
+  },
+  {
+    title: "Importación",
+    text: "Sube CSV o Excel para cargar movimientos rápidamente.",
+    icon: Upload,
+  },
+  {
+    title: "Usuarios",
+    text: "Invita colaboradores con distintos niveles de permisos.",
+    icon: Users,
+  },
+  {
+    title: "Multidivisa",
+    text: "Trabaja con GBP, EUR, USD y otras monedas clave.",
+    icon: Coins,
+  },
 ];
 
 function FloatingCard({
@@ -307,8 +345,8 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="fixed left-0 right-0 top-4 z-50 px-4">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-slate-950/75 px-5 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">
               A
@@ -344,7 +382,8 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
       <section className="relative min-h-[150vh] overflow-hidden bg-[#f6f3ee] px-6 pt-28 text-center text-slate-950">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-20 h-[760px] w-[1120px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.24),transparent_62%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.03)_1px,transparent_1px)] bg-[size:72px_72px]" />
+          <div className="absolute left-1/2 top-20 h-[760px] w-[1120px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.24),transparent_58%)]" />
 
           <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-slate-950 to-transparent" />
         </div>
@@ -383,7 +422,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           </div>
         </div>
 
-        <div className="sticky top-24 mx-auto mt-16 max-w-[1180px] px-4 pb-40 [perspective:1600px]">
+        <div className="sticky top-24 mx-auto mt-16 max-w-[1050px] px-4 pb-40 [perspective:1600px]">
           <motion.div
          
           transition={{
@@ -416,7 +455,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
             <div className="pointer-events-none absolute -inset-16 rounded-[4rem] bg-[radial-gradient(circle_at_50%_20%,rgba(79,70,229,0.25),transparent_45%)] blur-3xl" />
 
-            <div className="relative mx-auto rounded-[3rem] border border-white/60 bg-white/50 p-4 shadow-[0_80px_180px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+            <div className="relative mx-auto rounded-[3rem] border border-white/60 bg-white/50 p-4 shadow-[0_120px_240px_rgba(15,23,42,0.32)] backdrop-blur-2xl">
               <DashboardMockup />
             </div>
           </motion.div>
@@ -626,50 +665,41 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
         visual pensada para personas y pequeños negocios.
       </p>
     </div>
+<div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {featureCards.map((feature) => {
+  const Icon = feature.icon;
 
-    <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {[
-        [
-          "Movimientos",
-          "Registra ingresos y gastos con categorías, notas y filtros claros.",
-        ],
-        [
-          "Presupuestos",
-          "Define límites mensuales y compara lo previsto con lo real.",
-        ],
-        [
-          "Balance",
-          "Controla activos, pasivos, deudas, efectivo e inversiones.",
-        ],
-        [
-          "Importación",
-          "Sube CSV o Excel para cargar movimientos rápidamente.",
-        ],
-        [
-          "Usuarios",
-          "Invita colaboradores con distintos niveles de permisos.",
-        ],
-        [
-          "Multidivisa",
-          "Trabaja con GBP, EUR, USD y otras monedas clave.",
-        ],
-      ].map(([title, text]) => (
-        <div
-          key={title}
-          className="group rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 transition hover:-translate-y-1 hover:bg-white/[0.07]"
-        >
-          <div className="mb-8 h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-cyan-400/20" />
+  return (
+    <div
+      key={feature.title}
+      className="group rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 transition hover:-translate-y-1 hover:bg-white/[0.07]"
+    >
+      <motion.div
+        whileHover={{
+          scale: 1.08,
+          rotate: 3,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 260,
+          damping: 14,
+        }}
+        className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/30 to-cyan-400/20 text-cyan-300"
+      >
+        <Icon className="h-6 w-6" />
+      </motion.div>
 
-          <h3 className="text-2xl font-semibold">
-            {title}
-          </h3>
+      <h3 className="text-2xl font-semibold tracking-tight">
+        {feature.title}
+      </h3>
 
-          <p className="mt-4 leading-7 text-slate-400">
-            {text}
-          </p>
-        </div>
-      ))}
+      <p className="mt-4 leading-7 text-slate-400">
+        {feature.text}
+      </p>
     </div>
+  );
+})}
+</div>
   </div>
 </section>
 <section
@@ -697,7 +727,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
     <form
   onSubmit={handleWaitlistSubmit}
-  className="mx-auto mt-12 flex max-w-xl flex-col gap-3 rounded-full border border-white/10 bg-white/[0.04] p-2 sm:flex-row"
+  className="mx-auto mt-12 flex max-w-xl flex-col gap-3 rounded-full border border-white/10 bg-white/[0.03] p-2 sm:flex-row"
 >
   <input
     type="email"

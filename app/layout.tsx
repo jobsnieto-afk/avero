@@ -15,7 +15,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AVERO | Finanzas personales y empresariales",
-  description: "AVERO une tus finanzas personales y empresariales en una plataforma moderna, clara y visual."
+  description:
+    "AVERO une tus finanzas personales y empresariales en una plataforma moderna, clara y visual.",
+  openGraph: {
+    title: "AVERO | Finanzas personales y empresariales",
+    description:
+      "Controla tu dinero personal y de negocio desde una sola plataforma.",
+    url: "https://www.avero.pro",
+    siteName: "AVERO",
+    locale: "es_ES",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AVERO | Finanzas personales y empresariales",
+    description:
+      "Finanzas personales y empresariales en una experiencia moderna, clara y visual.",
+  },
 };
 
 export default function RootLayout({
