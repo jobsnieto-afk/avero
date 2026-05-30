@@ -17,13 +17,13 @@ export const metadata: Metadata = {
   title: "AVERO | Finanzas personales y empresariales",
   description:
     "AVERO une tus finanzas personales y empresariales en una plataforma moderna, clara y visual.",
+  icons: {
+    icon: "/icon.png",
+  },
   openGraph: {
     title: "AVERO | Finanzas personales y empresariales",
     description:
       "Controla tu dinero personal y de negocio desde una sola plataforma.",
-      icons: {
-  icon: "/favicon.png",
-},
     url: "https://www.avero.pro",
     siteName: "AVERO",
     locale: "es_ES",
