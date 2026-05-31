@@ -1,5 +1,6 @@
 "use client";
 
+
 import React, { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
@@ -15,14 +16,27 @@ import {
   Upload,
   Users,
   Coins,
+  CheckCircle,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
 const metrics = [
-  { label: "Ingresos", value: "£8,420", change: "+12.4%" },
-  { label: "Gastos", value: "£4,180", change: "-6.2%" },
-  { label: "Ahorro", value: "£4,240", change: "+18.1%" },
+  {
+    label: "Cashflow mensual",
+    value: "£24,892",
+    change: "+12.4% este mes",
+  },
+  {
+    label: "Savings rate",
+    value: "32%",
+    change: "+4.1% vs abril",
+  },
+  {
+    label: "Facturas pendientes",
+    value: "£3,240",
+    change: "2 vencen esta semana",
+  },
 ];
 
 const transactions = [
@@ -105,13 +119,15 @@ function FloatingCard({
 
 function DashboardMockup() {
   return (
-    <div className="relative overflow-hidden rounded-[2.2rem] border border-slate-900/10 bg-[#f8fafc] p-4 text-slate-950 shadow-2xl shadow-slate-950/20">
-      <div className="grid gap-4 lg:grid-cols-[230px_1fr]">
+    <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-900/10 bg-[#f8fafc] p-3 text-slate-950 shadow-2xl shadow-slate-950/20 sm:rounded-[2.2rem] sm:p-4">
+      <div className="relative z-10 grid gap-4 lg:grid-cols-[230px_1fr]">
         <aside className="hidden rounded-[1.6rem] bg-slate-950 p-5 text-white lg:block">
           <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">
-              A
-            </div>
+            <img
+            src="/icon.png"
+            alt="AVERO"
+            className="h-9 w-9 object-contain"
+            />
 
             <div>
               <p className="text-sm font-semibold">AVERO</p>
@@ -121,7 +137,7 @@ function DashboardMockup() {
             </div>
           </div>
 
-          {["Resumen", "Movimientos", "Presupuesto", "Balance"].map(
+          {["Resumen",  "Movimientos",  "Presupuesto",  "Facturas",  "Suscripciones",  "Cashflow",  "Balance",].map(
             (item, index) => (
               <div
                 key={item}
@@ -159,7 +175,7 @@ function DashboardMockup() {
               </p>
 
               <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-                Todo bajo control.
+                Tu dinero, sincronizado.
               </h2>
             </div>
 
@@ -178,7 +194,7 @@ function DashboardMockup() {
             {metrics.map((metric) => (
               <div
                 key={metric.label}
-                className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"
+                className="rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/80 p-5 shadow-sm"
               >
                 <p className="text-sm text-slate-500">
                   {metric.label}
@@ -230,7 +246,7 @@ function DashboardMockup() {
                           ease: "easeOut",
                         }}
                         viewport={{ once: true }}
-                        className="rounded-t-xl bg-slate-950"
+                        className="rounded-t-xl bg-gradient-to-t from-indigo-500 via-violet-500 to-cyan-400 shadow-[0_0_24px_rgba(99,102,241,0.35)]"
                       />
 
                       <motion.div
@@ -254,7 +270,7 @@ function DashboardMockup() {
 
             <div className="rounded-[1.6rem] border border-slate-200 bg-slate-950 p-5 text-white">
               <p className="text-sm text-slate-400">
-                Movimientos recientes
+                Actividad en tiempo real
               </p>
 
               <div className="mt-5 space-y-3">
@@ -290,7 +306,10 @@ function DashboardMockup() {
                 </p>
 
                 <p className="mt-2 text-3xl font-semibold">
-                  68%
+                  74%
+                </p>
+                <p className="mt-1 text-xs text-indigo-100/80">
+                  Dentro del objetivo mensual
                 </p>
               </div>
             </div>
@@ -373,7 +392,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
             href="#beta"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
           >
-            Unirme a la beta
+            Solicitar acceso privado
           </a>
         </nav>
       </header>
@@ -406,7 +425,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <button className="group inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-semibold text-white shadow-2xl shadow-slate-950/20 transition hover:scale-[1.02]">
-              Unirme a la beta
+              Solicitar acceso privado
 
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
@@ -419,7 +438,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           </div>
         </div>
 
-        <div className="sticky top-24 mx-auto mt-12 max-w-[1050px] px-4 pb-40 [perspective:1600px]">
+        <div className="sticky top-24 mx-auto mt-12 max-w-[1050px] px-2 pb-32 [perspective:1600px] sm:px-4 sm:pb-40">
           <motion.div
          
           transition={{
@@ -439,20 +458,18 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
               title="Cashflow"
               value="+£2,420"
               detail="Proyección mensual"
-              className="-left-4 top-24"
+              className="z-30 -left-30 top-50"
             />
 
             <FloatingCard
               title="Patrimonio"
               value="£128k"
               detail="Activos menos pasivos"
-              className="-right-4 bottom-32"
+              className="z-30 -right-30 bottom-32"
               delay={1.2}
             />
-
             <div className="pointer-events-none absolute -inset-16 rounded-[4rem] bg-[radial-gradient(circle_at_50%_20%,rgba(79,70,229,0.25),transparent_45%)] blur-3xl" />
-
-            <div className="relative mx-auto rounded-[3rem] border border-white/60 bg-white/50 p-4 shadow-[0_120px_240px_rgba(15,23,42,0.32)] backdrop-blur-2xl">
+            <div className="relative z-10 mx-auto rounded-[2rem] border border-white/60 bg-white/50 p-2 shadow-[0_120px_240px_rgba(15,23,42,0.32)] backdrop-blur-2xl sm:rounded-[3rem] sm:p-4">
               <DashboardMockup />
             </div>
           </motion.div>
@@ -483,9 +500,60 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
     ))}
   </div>
 </section>
+<motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, ease: "easeOut" }}
+  viewport={{ once: true, amount: 0.2 }}
+  className="relative overflow-hidden bg-slate-950 px-6 pb-28 pt-4 text-white"
+>  <div className="pointer-events-none absolute inset-0">
+    <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-3xl" />
+  </div>
 
-<section className="border-y border-white/10 bg-gradient-to-b from-[#0B1020] to-[#050816] px-6 py-32 text-white">
-  <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
+  <div className="relative mx-auto max-w-7xl">
+    <div className="mx-auto max-w-3xl text-center">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">
+        Diseñado para
+      </p>
+
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight md:text-5xl">
+        Personas que gestionan dinero personal y negocio al mismo tiempo.
+      </h2>
+
+      <p className="mt-5 text-lg leading-8 text-slate-800">
+        AVERO nace para autónomos, consultores, agencias y pequeños negocios
+        que necesitan claridad financiera sin vivir atrapados en hojas de cálculo.
+      </p>
+    </div>
+
+    <div className="mt-14 grid gap-4 md:grid-cols-5">
+      {[
+        ["Autónomos", "Ingresos variables, gastos fijos y previsión mensual."],
+        ["Consultores", "Clientes, facturas, impuestos y ahorro personal."],
+        ["Agencias", "Cashflow, suscripciones, equipo y rentabilidad."],
+        ["Creadores", "Múltiples fuentes de ingreso y costes digitales."],
+        ["Pequeños negocios", "Control diario sin perder visión global."],
+      ].map(([title, text]) => (
+        <div
+          key={title}
+          className="rounded-[1.6rem] border border-slate-200 bg-white/70 p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.07]"
+        >
+          <p className="text-base font-semibold text-slate-600">{title}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{text}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</motion.section>
+
+<motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, ease: "easeOut" }}
+  viewport={{ once: true, amount: 0.2 }}
+  className="border-y border-white/10 bg-gradient-to-b from-[#0B1020] to-[#050816] px-6 py-32 text-white"
+>
+    <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
     <div>
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-300">
         Personal + Empresa
@@ -530,10 +598,15 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
       </div>
     </div>
   </div>
-</section>
-<section
+</motion.section>
+
+
+<motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, ease: "easeOut" }}
+  viewport={{ once: true, amount: 0.2 }}
   id="funciones"
-  className="relative overflow-hidden bg-[#050816] px-6 py-32 text-white"
 >
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
     <div className="absolute left-[-10%] top-20 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
@@ -645,7 +718,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
       </div>
     </div>
   </div>
-</section>
+</motion.section>
 <section className="bg-[#0A1020] px-6 py-32 text-white">
   <div className="mx-auto max-w-7xl">
     <div className="mx-auto max-w-3xl text-center">
@@ -699,7 +772,11 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 </div>
   </div>
 </section>
-<section
+<motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, ease: "easeOut" }}
+  viewport={{ once: true, amount: 0.2 }}
   id="beta"
   className="relative overflow-hidden px-6 py-32"
 >
@@ -709,11 +786,11 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
   <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] shadow-[0_0_120px_rgba(99,102,241,0.25)] border border-white/10 bg-gradient-to-br from-[#111827] to-[#050816] p-10 text-center md:p-16">
     <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
-      Beta privada
+      Acceso privado
     </p>
 
     <h2 className="mx-auto mt-6 max-w-4xl text-4xl font-semibold tracking-tight md:text-6xl">
-      Sé de los primeros en usar AVERO.
+        Acceso privado a AVERO.    
     </h2>
 
     <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-slate-300">
@@ -740,18 +817,50 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
     disabled={status === "loading"}
     className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
   >
-    {status === "loading" ? "Guardando..." : "Unirme a la beta"}
+    {status === "loading" ? "Guardando..." : "Solicitar acceso privado"}
   </button>
 </form>
 {status === "success" && (
-  <p className="mt-4 text-sm text-cyan-300">
-    Perfecto. Ya estás en la lista de espera.
-  </p>
+  <motion.div
+    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.35, ease: "easeOut" }}
+    className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-4 text-left text-cyan-100"
+  >
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-300">
+      <CheckCircle className="h-5 w-5" />
+    </div>
+
+    <div>
+      <p className="text-sm font-semibold text-white">
+        Estás dentro.
+      </p>
+      <p className="mt-1 text-sm text-cyan-100/80">
+        Te avisaremos cuando abramos el acceso privado a AVERO.
+      </p>
+    </div>
+  </motion.div>
 )}
 {status === "duplicate" && (
-  <p className="mt-4 text-sm text-cyan-300">
-    Este email ya está en la lista de espera.
-  </p>
+  <motion.div
+    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.35, ease: "easeOut" }}
+    className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border border-violet-400/20 bg-violet-400/10 px-5 py-4 text-left text-violet-100"
+  >
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-400/15 text-violet-300">
+      <CheckCircle className="h-5 w-5" />
+    </div>
+
+    <div>
+      <p className="text-sm font-semibold text-white">
+        Ya estabas en la lista.
+      </p>
+      <p className="mt-1 text-sm text-violet-100/80">
+        Guardamos tu acceso anticipado. Te avisaremos cuando abramos la beta.
+      </p>
+    </div>
+  </motion.div>
 )}
 
 {status === "error" && (
@@ -765,38 +874,85 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
       <span>✔ Feedback directo</span>
     </div>
   </div>
-</section>
+</motion.section>
+<footer className="border-t border-white/10 bg-[#050816] px-6 py-20 text-white">
+  <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.6fr_0.6fr]">
+    
+    <div>
+      <div className="flex items-center gap-4">
+        <img
+          src="/logo-avero.png"
+          alt="AVERO"
+          className="h-16 w-auto object-contain"
+        />
 
-<footer className="border-t border-white/10 px-6 py-10 text-white">
-  <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center">
-    <div className="flex items-center gap-3">
-      <img
-  src="/logo-avero.png"
-  alt="AVERO"
-  className="h-16 w-auto"
+        <div>
 
-/>
+          <p className="text-sm text-slate-500">
+            Sistema financiero personal y empresarial
+          </p>
+        </div>
+      </div>
 
-      <div>
-        <p className="text-sm text-slate-500">
-          Sistema Financiero Personal y Empresarial
-        </p>
+      <p className="mt-8 max-w-lg text-lg leading-8 text-slate-400">
+        Finanzas personales y de negocio en una experiencia moderna,
+        visual y diseñada para ofrecer claridad real.
+      </p>
+
+      <div className="mt-6 inline-flex items-center rounded-full border border-cyan-400/20 bg-gradient-to-r from-cyan-400/10 to-indigo-500/10 px-4 py-2 text-sm text-cyan-200">
+        Beta privada · Acceso limitado
       </div>
     </div>
 
-    <div className="flex gap-6 text-sm text-slate-500">
-      <a href="#" className="transition hover:text-white">
-        Privacidad
-      </a>
+    <div className="grid grid-cols-2 gap-8 md:justify-self-end">
+      <div>
+        <p className="text-sm font-semibold text-white">
+          Navegación
+        </p>
 
-      <a href="#" className="transition hover:text-white">
-        Términos
-      </a>
+        <div className="mt-4 space-y-3 text-sm text-slate-400">
+          <a href="#producto" className="block hover:text-white">
+            Producto
+          </a>
 
-      <a href="#" className="transition hover:text-white">
-        Contacto
-      </a>
+          <a href="#funciones" className="block hover:text-white">
+            Funciones
+          </a>
+
+          <a href="#beta" className="block hover:text-white">
+            Acceso beta
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-white">
+          Legal
+        </p>
+
+        <div className="mt-4 space-y-3 text-sm text-slate-400">
+          <a href="#" className="block hover:text-white">
+            Privacidad
+          </a>
+
+          <a href="#" className="block hover:text-white">
+            Términos
+          </a>
+
+          <a href="#" className="block hover:text-white">
+            Contacto
+          </a>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div className="mx-auto mt-12 flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-slate-500 md:flex-row">
+    <p>© 2026 AVERO. Todos los derechos reservados.</p>
+
+    <p>
+      Diseñado con precisión en Londres.
+    </p>
   </div>
 </footer>
     </main>
