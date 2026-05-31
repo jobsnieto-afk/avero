@@ -5,11 +5,9 @@ import React, { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
-  ChevronRight,
   Sparkles,
   Wallet,
   Building2,
-  Check,
   ListChecks,
   PiggyBank,
   Landmark,
@@ -366,7 +364,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="fixed left-0 right-0 top-4 z-50 px-4">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-slate-950/75 px-5 py-1 shadow-2xl shadow-black/30 backdrop-blur-xl">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-slate-950/60 backdrop-saturate-150 px-5 py-1 shadow-2xl shadow-black/30 backdrop-blur-xl">
           <div className="flex items-center gap-3">
           <img
             src="/logo-avero.png"
@@ -424,17 +422,12 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <button className="group inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-semibold text-white shadow-2xl shadow-slate-950/20 transition hover:scale-[1.02]">
-              Solicitar acceso privado
+            <a href="#beta"  className="group inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-8 py-4 text-sm font-semibold text-white shadow-2xl shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-slate-800"
+>
+  Solicitar acceso privado
 
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </button>
-
-            <button className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white/70 px-7 py-4 text-sm font-semibold text-slate-950 backdrop-blur transition hover:bg-white">
-              Ver cómo funciona
-
-              <ChevronRight className="h-4 w-4" />
-            </button>
+  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+</a>
           </div>
         </div>
 
@@ -468,7 +461,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
               className="z-30 -right-30 bottom-32"
               delay={1.2}
             />
-            <div className="pointer-events-none absolute -inset-16 rounded-[4rem] bg-[radial-gradient(circle_at_50%_20%,rgba(79,70,229,0.25),transparent_45%)] blur-3xl" />
+            <div className="pointer-events-none absolute -inset-16 rounded-[4rem] bg-[radial-gradient(circle_at_50%_20%,rgba(79,70,229,0.25),transparent_45%)] blur-2xl" />
             <div className="relative z-10 mx-auto rounded-[2rem] border border-white/60 bg-white/50 p-2 shadow-[0_120px_240px_rgba(15,23,42,0.32)] backdrop-blur-2xl sm:rounded-[3rem] sm:p-4">
               <DashboardMockup />
             </div>
@@ -505,9 +498,9 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   whileInView={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.8, ease: "easeOut" }}
   viewport={{ once: true, amount: 0.2 }}
-  className="relative overflow-hidden bg-slate-950 px-6 pb-28 pt-4 text-white"
+  className="relative overflow-hidden bg-[#F3EFE7] px-6 py-30 text-slate-950"
 >  <div className="pointer-events-none absolute inset-0">
-    <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-3xl" />
+    <div className="absolute left-1/2 top-0 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-3xl" />
   </div>
 
   <div className="relative mx-auto max-w-7xl">
@@ -516,17 +509,17 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
         Diseñado para
       </p>
 
-      <h2 className="mt-4 text-3xl font-semibold tracking-tight md:text-5xl">
+      <h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-6xl">
         Personas que gestionan dinero personal y negocio al mismo tiempo.
       </h2>
 
-      <p className="mt-5 text-lg leading-8 text-slate-800">
+      <p className="mt-6 text-lg leading-8 text-slate-600">
         AVERO nace para autónomos, consultores, agencias y pequeños negocios
         que necesitan claridad financiera sin vivir atrapados en hojas de cálculo.
       </p>
     </div>
 
-    <div className="mt-14 grid gap-4 md:grid-cols-5">
+    <div className="mt-16 grid gap-5 md:grid-cols-5">
       {[
         ["Autónomos", "Ingresos variables, gastos fijos y previsión mensual."],
         ["Consultores", "Clientes, facturas, impuestos y ahorro personal."],
@@ -536,24 +529,30 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
       ].map(([title, text]) => (
         <div
           key={title}
-          className="rounded-[1.6rem] border border-slate-200 bg-white/70 p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.07]"
+          className="rounded-[1.8rem] border border-slate-200 bg-white/75 p-6 text-left shadow-xl shadow-slate-950/5 backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white"
         >
-          <p className="text-base font-semibold text-slate-600">{title}</p>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{text}</p>
+          <p className="text-base font-semibold text-slate-950">
+            {title}
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            {text}
+          </p>
         </div>
       ))}
     </div>
   </div>
 </motion.section>
 
+
 <motion.section
   initial={{ opacity: 0, y: 40 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.8, ease: "easeOut" }}
   viewport={{ once: true, amount: 0.2 }}
-  className="border-y border-white/10 bg-gradient-to-b from-[#0B1020] to-[#050816] px-6 py-32 text-white"
+  className="relative overflow-hidden border-y border-white/10 bg-gradient-to-b from-[#111827] via-[#0B1020] to-[#050816] px-6 py-40 text-white"
 >
-    <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
+    <div className="mx-auto grid max-w-7xl gap-24 lg:grid-cols-2 lg:items-center">
     <div>
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-300">
         Personal + Empresa
@@ -607,6 +606,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   transition={{ duration: 0.8, ease: "easeOut" }}
   viewport={{ once: true, amount: 0.2 }}
   id="funciones"
+  className="relative overflow-hidden bg-[#020617] px-6 py-20 text-white"
 >
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
     <div className="absolute left-[-10%] top-20 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
@@ -719,7 +719,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
     </div>
   </div>
 </motion.section>
-<section className="bg-[#0A1020] px-6 py-32 text-white">
+<section className="bg-[#0A1020] px-6 py-30 text-white">
   <div className="mx-auto max-w-7xl">
     <div className="mx-auto max-w-3xl text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-300">
@@ -778,7 +778,7 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
   transition={{ duration: 0.8, ease: "easeOut" }}
   viewport={{ once: true, amount: 0.2 }}
   id="beta"
-  className="relative overflow-hidden px-6 py-32"
+  className="relative overflow-hidden px-6 py-30"
 >
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
     <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/20 blur-3xl" />
