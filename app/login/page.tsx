@@ -1,13 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [isChecking, setIsChecking] = useState(true);
 
+  useEffect(() => {
+  async function checkSession() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      window.location.href = "/app";
+      return;
+    }
+
+    setIsChecking(false);
+  }
+
+  checkSession();
+}, []);
+
+if (isChecking) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#050816] text-white">
+      <p className="text-slate-400">Cargando AVERO...</p>
+    </main>
+  );
+}
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("loading");
@@ -51,8 +76,9 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="mt-6 w-full rounded-xl bg-white px-4 py-3 font-semibold text-slate-950"
-        >
+          disabled={status === "loading"}
+          className="mt-6 w-full rounded-xl bg-white px-4 py-3 font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+>
           {status === "loading" ? "Entrando..." : "Entrar"}
         </button>
 

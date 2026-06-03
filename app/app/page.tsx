@@ -12,7 +12,9 @@ type Transaction = {
   category: string;
   note: string | null;
   transaction_date: string;
+  created_at: string;
 };
+
 
 const categoryStyles: Record<
   string,
@@ -71,61 +73,153 @@ const categoryStyles: Record<
 };
 
 export default function AppPage() {
+
+   // ============================
+  // ESTADOS DE AUTENTICACIÓN
+  // ============================
+    const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const [email, setEmail] = useState("");
+
+     // ============================
+  // ESTADOS DE MOVIMIENTOS
+  // ============================
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
 
+  // ============================
+  // ESTADOS DE FILTROS
+  // ============================
+
+    const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+    const [sortBy, setSortBy] = useState<"date" | "amount" | "category">("date");
+
+
+  // ============================
+  // ESTADOS DEL FORMULARIO
+  // ============================
+
     const [type, setType] = useState<"income" | "expense">("expense");
     const [amount, setAmount] = useState("");
     const [category, setCategory] = useState("gasolina");
     const [note, setNote] = useState("");
+    
+    // ============================
+  // ESTADOS DE UX
+  // ============================
+
+    const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const [actionStatus, setActionStatus] = useState<"idle" | "updated" | "deleted" | "error">("idle");
     const [transactionDate, setTransactionDate] = useState(
       new Date().toISOString().split("T")[0]
     );
 
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const [editingAmount, setEditingAmount] = useState("");
     const [editingNote, setEditingNote] = useState("");
 
 
-    const filteredTransactions = transactions.filter((transaction) => {
-      if (filter === "all") return true;
-      return transaction.type === filter;
-}); 
-    useEffect(() => {
-    async function loadUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
-      if (!user) {
+  // ============================
+// FILTROS Y BÚSQUEDAS
+// ============================
+
+    const filteredTransactions = transactions.filter((transaction) => {
+    const matchesFilter =
+    filter === "all" || transaction.type === filter;
+
+  const matchesSearch =
+    transaction.category.toLowerCase().includes(search.toLowerCase()) ||
+    transaction.note?.toLowerCase().includes(search.toLowerCase());
+
+  return matchesFilter && matchesSearch;
+});
+
+const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+  if (sortBy === "amount") {
+    return Number(b.amount) - Number(a.amount);
+  }
+
+  if (sortBy === "category") {
+    return a.category.localeCompare(b.category);
+  }
+
+  return (
+    new Date(b.transaction_date).getTime() -
+    new Date(a.transaction_date).getTime()
+  );
+});
+
+// ============================
+// AUTENTICACIÓN
+// ============================
+
+
+    useEffect(() => {
+  async function loadUser() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setEmail(user.email || "");
+    setUser(user);
+
+    await loadTransactions(user.id);
+
+    setIsLoading(false);
+  }
+
+  loadUser();
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
+      if (!session?.user) {
         window.location.href = "/login";
         return;
       }
 
-      setEmail(user.email || "");
-      setUser(user);
-      loadTransactions(user.id);
-    }
+      setUser(session.user);
+      setEmail(session.user.email || "");
 
-    loadUser();
-  }, []);
+      await loadTransactions(session.user.id);
+    }
+  );
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/";
   }
-  async function loadTransactions(userId: string) {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("id, type, amount, category, note, transaction_date")
-    .eq("user_id", userId)
-    .order("transaction_date", { ascending: false });
 
-  if (error) {
+  // ============================
+  // CARGA DE MOVIMIENTOS
+  // ============================
+
+  async function loadTransactions(userId: string) {
+    
+    const { data, error } = await supabase
+    .from("transactions")
+    .select("id, type, amount, category, note, transaction_date, created_at")
+    .eq("user_id", userId)
+    .order("transaction_date", { ascending: false })
+    .order("created_at", { ascending: false });
+    
+
+    if (error) {
     console.error(error);
     return;
   }
@@ -133,17 +227,30 @@ export default function AppPage() {
   setTransactions(data || []);
 }
 
+// ============================
+// CRUD DE MOVIMIENTOS
+// ============================
+
   async function handleAddTransaction(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault();
 
   if (!user) return;
 
+  const numericAmount = Number(amount);
+
+if (!numericAmount || numericAmount <= 0) {
+  alert("Introduce una cantidad válida.");
+  return;
+}
+
+  setSaveStatus("saving");
+  
   const { data, error } = await supabase
   .from("transactions")
   .insert({
     user_id: user.id,
     type,
-    amount: Number(amount),
+    amount: numericAmount,
     category,
     note,
     transaction_date: transactionDate,
@@ -161,15 +268,29 @@ console.log("TRANSACTION RESULT:", { data, error });
   setAmount("");
   setNote("");
   setTransactionDate(new Date().toISOString().split("T")[0]);
-  await loadTransactions(user.id);
-  alert("Movimiento guardado.");
+  setTransactions((prev) => [
+  {
+    id: Date.now(),
+    type,
+    amount: numericAmount,
+    category,
+    note,
+    transaction_date: transactionDate,
+    created_at: new Date().toISOString(),
+  },
+  ...prev,
+]);
+
+await loadTransactions(user.id);
+  setSaveStatus("saved");
+
+  setTimeout(() => {
+  setSaveStatus("idle");
+}, 4000);
 }
 
 async function handleDeleteTransaction(transactionId: number) {
   if (!user) return;
-
-  const confirmed = window.confirm("¿Seguro que quieres borrar este movimiento?");
-  if (!confirmed) return;
 
   const { error } = await supabase
     .from("transactions")
@@ -179,11 +300,20 @@ async function handleDeleteTransaction(transactionId: number) {
 
   if (error) {
     console.error(error);
-    alert("No se pudo borrar el movimiento.");
+    setSaveStatus("error");
     return;
   }
 
   await loadTransactions(user.id);
+  setActionStatus("deleted");
+
+setTimeout(() => {
+  setActionStatus("idle");{actionStatus === "updated" && (
+  <p className="mb-4 text-sm text-emerald-300">
+    Movimiento actualizado correctamente.
+  </p>
+)}
+}, 3000);
 }
 
 async function handleUpdateTransaction(transactionId: number) {
@@ -206,7 +336,26 @@ async function handleUpdateTransaction(transactionId: number) {
 
   setEditingId(null);
   await loadTransactions(user.id);
+
+  setActionStatus("updated");
+
+    setTimeout(() => {
+    setActionStatus("idle");
+}, 3000);
 }
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// ============================
+// CÁLCULOS DEL DASHBOARD
+// ============================
+
+
 const totalIncome = transactions
   .filter((transaction) => transaction.type === "income")
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
@@ -218,6 +367,10 @@ const totalExpenses = transactions
 const balance = totalIncome - totalExpenses;
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
+
+// ============================
+// RESÚMENES MENSUALES
+// ============================
 
 const monthlyTransactions = transactions.filter((transaction) => {
   const date = new Date(transaction.transaction_date);
@@ -237,6 +390,31 @@ const monthlyExpenses = monthlyTransactions
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
 const totalMovements = monthlyTransactions.length;
+
+// ============================
+// GASTOS POR CATEGORÍA
+// ============================
+
+
+// ============================
+// GASTOS POR CATEGORÍA
+// Agrupa todos los gastos por categoría.
+// Ejemplo: gasolina + gasolina = total gasolina.
+// ============================
+
+const expensesByCategory = transactions
+  .filter((transaction) => transaction.type === "expense")
+  .reduce((acc, transaction) => {
+    const category = transaction.category;
+
+    acc[category] = (acc[category] || 0) + Number(transaction.amount);
+
+    return acc;
+  }, {} as Record<string, number>);
+
+// ============================
+// PRESUPUESTOS
+// ============================
 
 const budgets = {
   gasolina: 400,
@@ -272,6 +450,14 @@ const totalSubscriptions = subscriptions.reduce(
   (sum, subscription) => sum + subscription.amount,
   0
 );
+
+if (isLoading) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#050816] text-white">
+      <p className="text-slate-400">Cargando AVERO...</p>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-[#050816] px-6 py-10 text-white">
@@ -372,6 +558,7 @@ const totalSubscriptions = subscriptions.reduce(
           </p>
           </div>
 
+
   <div className="mt-6 space-y-5">
     {Object.entries(budgets).map(([category, limit]) => {
       const spent = monthlyTransactions
@@ -430,6 +617,37 @@ const totalSubscriptions = subscriptions.reduce(
 </div>
 
 <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <h2 className="text-2xl font-semibold">
+    Gastos por categoría
+  </h2>
+
+  <div className="mt-6 space-y-4">
+    {Object.entries(expensesByCategory)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, amount]) => (
+        <div
+          key={category}
+          className="flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">
+              {categoryStyles[category]?.icon || "📦"}
+            </span>
+
+            <span className="capitalize">
+              {category}
+            </span>
+          </div>
+
+          <span className="font-medium">
+            £{amount.toFixed(2)}
+          </span>
+        </div>
+      ))}
+  </div>
+</div>
+
+<div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
   <div className="flex items-center justify-between">
     <h2 className="text-2xl font-semibold">
       Suscripciones
@@ -469,8 +687,21 @@ const totalSubscriptions = subscriptions.reduce(
   onSubmit={handleAddTransaction}
   className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8"
 >
-  <h2 className="text-2xl font-semibold">Añadir movimiento</h2>
+<div className="flex items-center justify-between">
+  <div>
+    <p className="text-sm uppercase tracking-[0.2em] text-violet-300">
+      Nuevo registro
+    </p>
 
+    <h2 className="mt-2 text-2xl font-semibold">
+      Añadir movimiento
+    </h2>
+  </div>
+
+  <div className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-slate-400">
+    Manual
+  </div>
+</div>
   <div className="mt-6 grid gap-4 md:grid-cols-2">
     <select
       value={type}
@@ -523,13 +754,51 @@ const totalSubscriptions = subscriptions.reduce(
   </div>
 
   <button
-    type="submit"
-    className="mt-6 rounded-xl bg-white px-6 py-3 font-semibold text-slate-950"
+  type="submit"
+  disabled={!user || !amount}
+  className="mt-6 rounded-xl bg-white px-6 py-3 font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
   >
-    Guardar movimiento
+  Guardar movimiento
   </button>
+
+  {saveStatus === "saving" && (
+  <p className="mt-4 text-sm text-slate-400">
+    Guardando movimiento...
+  </p>
+)}
+
+{saveStatus === "saved" && (
+  <p className="mt-4 text-sm text-emerald-300">
+    Movimiento guardado correctamente.
+  </p>
+)}
+
+{saveStatus === "error" && (
+  <p className="mt-4 text-sm text-rose-300">
+    No se pudo guardar el movimiento.
+  </p>
+)}
   
 </form>
+
+{actionStatus === "updated" && (
+  <p className="mb-4 text-sm text-emerald-300">
+    Movimiento actualizado correctamente.
+  </p>
+)}
+
+{actionStatus === "deleted" && (
+  <p className="mb-4 text-sm text-rose-300">
+    Movimiento eliminado correctamente.
+  </p>
+)}
+
+{actionStatus === "updated" && (
+  <p className="mb-4 text-sm text-emerald-300">
+    Movimiento actualizado correctamente.
+  </p>
+)}
+
 <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
   <h2 className="text-2xl font-semibold">Movimientos recientes</h2>
     <div className="mt-4 flex flex-wrap gap-2">
@@ -553,9 +822,32 @@ const totalSubscriptions = subscriptions.reduce(
   
 </div>
 
-  <div className="mt-6 space-y-3">
-    {filteredTransactions.map((transaction) => (    
-      <div
+<input
+  type="text"
+  placeholder="Buscar movimientos..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="mt-4 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white placeholder:text-slate-500"
+/>
+<div className="mt-4 flex items-center gap-3">
+  <p className="text-sm text-slate-400">Ordenar por:</p>
+
+  <select
+  value={sortBy}
+  onChange={(e) =>
+    setSortBy(e.target.value as "date" | "amount" | "category")
+  }
+  className="rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-sm text-white"
+>
+  <option value="date">Fecha</option>
+  <option value="amount">Importe</option>
+  <option value="category">Categoría</option>
+</select>
+</div>
+
+  <div className="mt-6 space-y-3">{
+  sortedTransactions.map((transaction) => (      
+  <div
       key={transaction.id}
       className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4"
     >
@@ -582,6 +874,16 @@ const totalSubscriptions = subscriptions.reduce(
             >
               Guardar
             </button>
+            <button
+            onClick={() => {
+              setEditingId(null);
+              setEditingAmount("");
+              setEditingNote("");
+            }}
+            className="ml-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-400 transition hover:text-white"
+          >
+            Cancelar
+</button>
           </div>
         ) : (
           <>
@@ -604,7 +906,8 @@ const totalSubscriptions = subscriptions.reduce(
 </div>
 
             <p className="text-sm text-slate-400">
-              {transaction.note || "Sin nota"} · {transaction.transaction_date}
+              {transaction.note || "Sin nota"} ·{" "}
+              {formatDate(transaction.transaction_date)}
             </p>
           </>
         )}
@@ -633,21 +936,45 @@ const totalSubscriptions = subscriptions.reduce(
           Editar
         </button>
 
-        <button
-          onClick={() => handleDeleteTransaction(transaction.id)}
-          className="rounded-lg border border-white/10 px-3 py-1 text-xs text-slate-400 transition hover:text-white"
-        >
-          Borrar
-        </button>
+        {pendingDeleteId === transaction.id ? (
+  <div className="flex items-center gap-2">
+    <button
+      onClick={() => handleDeleteTransaction(transaction.id)}
+      className="rounded-lg bg-rose-400 px-3 py-1 text-xs font-medium text-slate-950"
+    >
+      Confirmar
+    </button>
+
+    <button
+      onClick={() => setPendingDeleteId(null)}
+      className="rounded-lg border border-white/10 px-3 py-1 text-xs text-slate-400 transition hover:text-white"
+    >
+      Cancelar
+    </button>
+  </div>
+) : (
+  <button
+    onClick={() => setPendingDeleteId(transaction.id)}
+    className="rounded-lg border border-white/10 px-3 py-1 text-xs text-slate-400 transition hover:text-white"
+  >
+    Borrar
+  </button>
+)}
       </div>
     </div>
   ))}
 
-    {filteredTransactions.length === 0 && (
-      <p className="text-slate-400">
-      Todavía no hay movimientos.
+    {sortedTransactions.length === 0 && (  
+      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-12 text-center">
+    <p className="text-lg font-medium text-white">
+      Todavía no hay movimientos
     </p>
-  )}
+
+    <p className="mt-2 text-sm text-slate-400">
+      Añade tu primer ingreso o gasto para empezar a construir tu historial financiero.
+    </p>
+  </div>
+)}
 </div>
 </div>
       </div>
