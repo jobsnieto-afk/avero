@@ -175,7 +175,7 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
 
       await loadTransactions(user.id);
     } catch (error) {
-      console.error("Error loading user:", error);
+      console.error("APP LOAD USER ERROR:", error);
     } finally {
       setIsLoading(false);
     }
@@ -455,7 +455,7 @@ const totalSubscriptions = subscriptions.reduce(
 if (isLoading) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050816] text-white">
-      <p className="text-slate-400">Cargando AVERO...</p>
+      <p className="text-slate-400">Cargando AVERO... v2</p>
     </main>
   );
 }
