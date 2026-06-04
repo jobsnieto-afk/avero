@@ -181,19 +181,19 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
 
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
-      if (!session?.user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      setUser(session.user);
-      setEmail(session.user.email || "");
-
-      await loadTransactions(session.user.id);
+  } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (!session?.user) {
+      window.location.href = "/login";
+      return;
     }
-  );
+
+    setUser(session.user);
+    setEmail(session.user.email || "");
+
+    await loadTransactions(session.user.id);
+
+    setIsLoading(false);
+  });
 
   return () => {
     subscription.unsubscribe();
