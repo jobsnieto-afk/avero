@@ -173,7 +173,9 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
       setEmail(user.email || "");
       setUser(user);
 
-      await loadTransactions(user.id);
+
+      // await loadTransactions(user.id);
+  
     } catch (error) {
       console.error("APP LOAD USER ERROR:", error);
     } finally {
@@ -194,7 +196,7 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     setUser(session.user);
     setEmail(session.user.email || "");
 
-    await loadTransactions(session.user.id);
+    //await loadTransactions(session.user.id);
     setIsLoading(false);
   });
 
