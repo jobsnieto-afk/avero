@@ -174,7 +174,7 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
       setUser(user);
 
 
-      // await loadTransactions(user.id);
+      await loadTransactions(user.id);
   
     } catch (error) {
       console.error("APP LOAD USER ERROR:", error);
@@ -215,25 +215,19 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
   // ============================
 
   async function loadTransactions(userId: string) {
-  try {
-    const { data, error } = await supabase
-      .from("transactions")
-      .select("id, type, amount, category, note, transaction_date, created_at")
-      .eq("user_id", userId)
-      .order("transaction_date", { ascending: false })
-      .order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("id, type, amount, category, note, transaction_date, created_at")
+    .eq("user_id", userId)
+    .order("transaction_date", { ascending: false });
 
-    if (error) {
-      console.error("LOAD TRANSACTIONS ERROR:", error);
-      setTransactions([]);
-      return;
-    }
-
-    setTransactions(data || []);
-  } catch (error) {
-    console.error("LOAD TRANSACTIONS CRASH:", error);
+  if (error) {
+    console.error("LOAD TRANSACTIONS ERROR:", error);
     setTransactions([]);
+    return;
   }
+
+  setTransactions(data || []);
 }
 
 // ============================
