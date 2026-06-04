@@ -23,8 +23,8 @@ export default function LoginPage() {
     } catch (error) {
       console.error("Error checking session:", error);
     } finally {
-      setIsChecking(false);
-    }
+  setIsChecking(false);
+}
   }
 
   checkSession();

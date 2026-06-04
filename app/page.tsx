@@ -329,24 +329,29 @@ async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
 
   setStatus("loading");
 
-  const { error } = await supabase.from("waitlist").insert({
-    email,
-  });
+  try {
+    const { error } = await supabase.from("waitlist").insert({
+      email,
+    });
 
-  if (error) {
-  console.error(error);
+    if (error) {
+      console.error("WAITLIST ERROR:", error);
 
-  if (error.code === "23505") {
-  setStatus("duplicate");
-  return;
-}
+      if (error.code === "23505") {
+        setStatus("duplicate");
+        return;
+      }
 
-  setStatus("error");
-  return;
-}
+      setStatus("error");
+      return;
+    }
 
-  setEmail("");
-  setStatus("success");
+    setEmail("");
+    setStatus("success");
+  } catch (error) {
+    console.error("WAITLIST CRASH:", error);
+    setStatus("error");
+  }
 }
 
   const { scrollYProgress } = useScroll();

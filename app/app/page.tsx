@@ -213,21 +213,25 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
   // ============================
 
   async function loadTransactions(userId: string) {
-    
+  try {
     const { data, error } = await supabase
-    .from("transactions")
-    .select("id, type, amount, category, note, transaction_date, created_at")
-    .eq("user_id", userId)
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false });
-    
+      .from("transactions")
+      .select("id, type, amount, category, note, transaction_date, created_at")
+      .eq("user_id", userId)
+      .order("transaction_date", { ascending: false })
+      .order("created_at", { ascending: false });
 
     if (error) {
-    console.error(error);
-    return;
-  }
+      console.error("LOAD TRANSACTIONS ERROR:", error);
+      setTransactions([]);
+      return;
+    }
 
-  setTransactions(data || []);
+    setTransactions(data || []);
+  } catch (error) {
+    console.error("LOAD TRANSACTIONS CRASH:", error);
+    setTransactions([]);
+  }
 }
 
 // ============================
