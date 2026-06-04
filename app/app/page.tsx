@@ -257,8 +257,6 @@ if (!numericAmount || numericAmount <= 0) {
   })
   .select();
 
-console.log("TRANSACTION RESULT:", { data, error });
-
   if (error) {
     console.error(error);
     alert("No se pudo guardar el movimiento.");
@@ -308,12 +306,8 @@ async function handleDeleteTransaction(transactionId: number) {
   setActionStatus("deleted");
 
 setTimeout(() => {
-  setActionStatus("idle");{actionStatus === "updated" && (
-  <p className="mb-4 text-sm text-emerald-300">
-    Movimiento actualizado correctamente.
-  </p>
-)}
-}, 3000);
+  setActionStatus("idle");
+  }, 3000);
 }
 
 async function handleUpdateTransaction(transactionId: number) {
@@ -790,12 +784,6 @@ if (isLoading) {
 {actionStatus === "deleted" && (
   <p className="mb-4 text-sm text-rose-300">
     Movimiento eliminado correctamente.
-  </p>
-)}
-
-{actionStatus === "updated" && (
-  <p className="mb-4 text-sm text-emerald-300">
-    Movimiento actualizado correctamente.
   </p>
 )}
 
