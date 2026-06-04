@@ -11,16 +11,20 @@ export default function LoginPage() {
 
   useEffect(() => {
   async function checkSession() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (user) {
-      window.location.href = "/app";
-      return;
+      if (user) {
+        window.location.href = "/app";
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking session:", error);
+    } finally {
+      setIsChecking(false);
     }
-
-    setIsChecking(false);
   }
 
   checkSession();

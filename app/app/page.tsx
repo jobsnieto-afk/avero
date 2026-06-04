@@ -160,21 +160,25 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
 
     useEffect(() => {
   async function loadUser() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setEmail(user.email || "");
+      setUser(user);
+
+      await loadTransactions(user.id);
+    } catch (error) {
+      console.error("Error loading user:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setEmail(user.email || "");
-    setUser(user);
-
-    await loadTransactions(user.id);
-
-    setIsLoading(false);
   }
 
   loadUser();
@@ -191,7 +195,6 @@ const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     setEmail(session.user.email || "");
 
     await loadTransactions(session.user.id);
-
     setIsLoading(false);
   });
 
