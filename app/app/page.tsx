@@ -87,6 +87,12 @@ export default function AppPage() {
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+  // ============================
+  // GRÁFICO PRINCIPAL
+  // 6 meses, 12 meses o histórico
+  // ============================
+
+    const [chartRange, setChartRange] = useState<"1m" | "3m" | "6m" | "12m" | "all">("6m");
 
   // ============================
   // ESTADOS DE FILTROS
@@ -362,12 +368,101 @@ const totalExpenses = transactions
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
 const balance = totalIncome - totalExpenses;
-const currentMonth = new Date().getMonth();
-const currentYear = new Date().getFullYear();
+
+// ============================
+// DATOS DEL GRÁFICO PRINCIPAL
+// Agrupa ingresos, gastos y balance por mes.
+// ============================
+
+const monthsToShow =
+  chartRange === "1m"
+    ? 1
+    : chartRange === "3m"
+    ? 3
+    : chartRange === "6m"
+    ? 6
+    : chartRange === "12m"
+    ? 12
+    : 999;
+
+const chartTransactions =
+  chartRange === "all"
+    ? transactions
+    : transactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.transaction_date);
+        const limitDate = new Date();
+
+        limitDate.setMonth(limitDate.getMonth() - monthsToShow);
+
+        return transactionDate >= limitDate;
+      });
+
+const chartData = chartTransactions.reduce(
+  (acc, transaction) => {
+    const date = new Date(transaction.transaction_date);
+    const monthKey = date.toLocaleDateString("es-ES", {
+      month: "short",
+      year: "2-digit",
+    });
+
+    if (!acc[monthKey]) {
+  acc[monthKey] = {
+    date: new Date(date.getFullYear(), date.getMonth(), 1),
+    income: 0,
+    expenses: 0,
+  };
+}
+
+    if (transaction.type === "income") {
+      acc[monthKey].income += Number(transaction.amount);
+    } else {
+      acc[monthKey].expenses += Number(transaction.amount);
+    }
+
+    return acc;
+  },
+  {} as Record<
+  string,
+  { date: Date; income: number; expenses: number }
+>
+);
+
+const chartItems = Object.entries(chartData)
+  .map(([month, values]) => ({
+    month,
+    date: values.date,
+    income: values.income,
+    expenses: values.expenses,
+    balance: values.income - values.expenses,
+  }))
+  .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  // ============================
+// INSIGHTS DE AVERO
+// ============================
+
+const periodIncome = chartItems.reduce(
+  (sum, item) => sum + item.income,
+  0
+);
+
+const periodExpenses = chartItems.reduce(
+  (sum, item) => sum + item.expenses,
+  0
+);
+
+const periodBalance = periodIncome - periodExpenses;
+
+const savingsRate = periodIncome > 0
+    ? ((periodBalance / periodIncome) * 100).toFixed(1)
+    : "0";
+
 
 // ============================
 // RESÚMENES MENSUALES
 // ============================
+const currentMonth = new Date().getMonth();
+const currentYear = new Date().getFullYear();
 
 const monthlyTransactions = transactions.filter((transaction) => {
   const date = new Date(transaction.transaction_date);
@@ -409,16 +504,122 @@ const expensesByCategory = transactions
     return acc;
   }, {} as Record<string, number>);
 
+  const topCategory =
+  Object.entries(expensesByCategory)
+    .sort((a, b) => b[1] - a[1])[0];
+
+    
+
 // ============================
 // PRESUPUESTOS
 // ============================
 
-const budgets = {
+const budgets: Record<string, number> = {
   gasolina: 400,
   comida: 300,
   suscripciones: 80,
   tarjetas: 250,
+  negocio: 1000,
+  otros: 500,
+  coche: 300,
+  casa: 1200,
+  impuestos: 500,
+  ocio: 200,
 };
+
+// ============================
+// PRESUPUESTO PERSONAL
+// Método porcentual
+// ============================
+
+const personalBudgetPercentages: Record<string, number> = {
+  "Necesidades básicas": 50,
+  Ahorro: 15,
+  Inversión: 15,
+  Educación: 10,
+  Entretenimiento: 10,
+};
+
+const personalBudgetCategories: Record<string, string[]> = {
+  "Necesidades básicas": [
+    "comida",
+    "casa",
+    "coche",
+    "gasolina",
+    "impuestos",
+  ],
+
+  Ahorro: [],
+
+  Inversión: [],
+
+  Educación: [],
+
+  Entretenimiento: [
+    "ocio",
+    "suscripciones",
+  ],
+};
+
+const personalBudget = Object.entries(
+  personalBudgetPercentages
+).map(([name, percentage]) => {
+  const limit = (monthlyIncome * percentage) / 100;
+
+  const linkedCategories =
+    personalBudgetCategories[name] || [];
+
+  const spent = monthlyTransactions
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" &&
+        linkedCategories.includes(transaction.category)
+    )
+    .reduce(
+      (sum, transaction) =>
+        sum + Number(transaction.amount),
+      0
+    );
+
+  const remaining = limit - spent;
+
+  const usedPercentage =
+    limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+
+  return {
+    name,
+    percentage,
+    limit,
+    spent,
+    remaining,
+    usedPercentage,
+  };
+});
+
+const budgetAlerts = Object.entries(budgets)
+  .map(([category, limit]) => {
+    const spent = monthlyTransactions
+      .filter(
+        (transaction) =>
+          transaction.type === "expense" &&
+          transaction.category === category
+      )
+      .reduce(
+        (sum, transaction) =>
+          sum + Number(transaction.amount),
+        0
+      );
+
+    const percentage = (spent / limit) * 100;
+
+    return {
+      category,
+      spent,
+      limit,
+      percentage,
+    };
+  })
+  .filter((item) => item.percentage >= 75);
 
 const subscriptions = [
   {
@@ -482,69 +683,385 @@ if (isLoading) {
           </button>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3 xl:grid-cols-3">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-            <p className="text-sm text-slate-400">
-              Ingresos
-            </p>
 
-            <h2 className="mt-4 text-4xl font-semibold">
-              £{totalIncome.toFixed(2)}
-            </h2>
-          </div>
+        {/*
+        
+============================
+    RESUMEN GENERAL
+============================ */}
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-            <p className="text-sm text-slate-400">
-              Gastos
-            </p>
+<div className="mt-12 grid gap-6 md:grid-cols-3">
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
+    <p className="text-sm text-slate-400">
+      Ingresos
+    </p>
 
-            <h2 className="mt-4 text-4xl font-semibold">
-              £{totalExpenses.toFixed(2)}
-            </h2>
-          </div>
+    <h2 className="mt-4 text-3xl font-semibold tracking-tight xl:text-3xl">
+      £{totalIncome.toFixed(2)}
+    </h2>
+  </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-            <p className="text-sm text-slate-400">
-              Balance
-            </p>
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
+    <p className="text-sm text-slate-400">
+      Gastos
+    </p>
 
-            <h2 className="mt-4 text-4xl font-semibold text-emerald-300">
-              £{balance.toFixed(2)}
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-6 lg:grid-cols-1">
-  
-        <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
-          <p className="whitespace-nowrap text-sm text-slate-400">
-            Gastos este mes
-          </p>
+    <h2 className="mt-4 text-3xl font-semibold tracking-tight xl:text-3xl">
+      £{totalExpenses.toFixed(2)}
+    </h2>
+  </div>
 
-          <h3 className="mt-4 text-3xl font-semibold tracking-tight text-rose-300">
-            £{monthlyExpenses.toFixed(2)}
-          </h3>
-        </div>
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
+    <p className="text-sm text-slate-400">
+      Balance
+    </p>
 
-        <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
-          <p className="whitespace-nowrap text-sm text-slate-400">
-            Ingresos este mes
-          </p>
+    <h2 className="mt-4 text-3xl font-semibold tracking-tight text-emerald-300 xl:text-3xl">
+      £{balance.toFixed(2)}
+    </h2>
+  </div>
+</div>
 
-          <h3 className="mt-4 text-3xl font-semibold tracking-tight text-emerald-300">
-            £{monthlyIncome.toFixed(2)}
-          </h3>
-        </div>
+{/* ============================
+    RESUMEN MENSUAL
+============================ */}
 
-        <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
-          <p className="whitespace-nowrap text-sm text-slate-400">
-            Movimientos este mes
-          </p>
+<div className="mt-6 grid gap-6 md:grid-cols-3">
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
+    <p className="text-sm text-slate-400">
+      Gastos este mes
+    </p>
 
-          <h3 className="mt-4 text-3xl font-semibold tracking-tight">
-            {totalMovements}
-          </h3>
-        </div>
+    <h3 className="mt-4 text-2xl font-semibold tracking-tight text-rose-300 xl:text-3xl">
+      £{monthlyExpenses.toFixed(2)}
+    </h3>
+  </div>
 
-        <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
+    <p className="text-sm text-slate-400">
+      Ingresos este mes
+    </p>
+
+    <h3 className="mt-4 text-2xl font-semibold tracking-tight text-emerald-300 xl:text-3xl">
+      £{monthlyIncome.toFixed(2)}
+    </h3>
+  </div>
+
+  <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-7">
+    <p className="text-sm text-slate-400">
+      Movimientos este mes
+    </p>
+
+    <h3 className="mt-4 text-2xl font-semibold tracking-tight xl:text-3xl">
+      {totalMovements}
+    </h3>
+  </div>
+</div>
+
+
+<div className="mt-10 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+  <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <div className="flex items-center justify-between gap-4">
+    <div>
+      <p className="text-sm uppercase tracking-[0.2em] text-violet-300">
+        Evolución financiera
+      </p>
+
+      <h2 className="mt-3 text-3xl font-semibold">
+        Ingresos · Gastos · Balance
+      </h2>
+    </div>
+
+    <div className="flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+      {[
+  ["1m", "1M"],
+  ["3m", "3M"],
+  ["6m", "6M"],
+  ["12m", "12M"],
+  ["all", "Todo"],
+].map(([value, label]) => (
+        <button
+          key={value}
+          onClick={() => setChartRange(value as "1m" | "3m" | "6m" | "12m" | "all")}
+          className={`rounded-full px-3 py-1 text-xs transition ${
+            chartRange === value
+              ? "bg-white text-slate-950"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div className="mt-10 h-64">
+  {chartItems.length === 0 ? (
+    <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-400">
+      Añade movimientos para ver tu evolución financiera.
+    </div>
+  ) : (
+    <svg
+      viewBox="0 0 600 220"
+      className="h-full w-full overflow-visible"
+      preserveAspectRatio="none"
+    >
+      {[0, 1, 2, 3].map((line) => (
+        <line
+          key={line}
+          x1="0"
+          x2="600"
+          y1={line * 55}
+          y2={line * 55}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="1"
+        />
+      ))}
+
+      {(() => {
+        const maxValue = Math.max(
+          ...chartItems.map((item) =>
+            Math.max(item.income, item.expenses)
+          ),
+          1
+        );
+
+        const getX = (index: number) =>
+          chartItems.length === 1
+            ? 300
+            : (index / (chartItems.length - 1)) * 600;
+
+        const getY = (value: number) =>
+          210 - (value / maxValue) * 190;
+
+        const incomePath = chartItems
+          .map((item, index) => {
+            const command = index === 0 ? "M" : "L";
+            return `${command} ${getX(index)} ${getY(item.income)}`;
+          })
+          .join(" ");
+
+        const expensesPath = chartItems
+          .map((item, index) => {
+            const command = index === 0 ? "M" : "L";
+            return `${command} ${getX(index)} ${getY(item.expenses)}`;
+          })
+          .join(" ");
+
+          const balancePath = chartItems
+          .map((item, index) => {
+            const command = index === 0 ? "M" : "L";
+            return `${command} ${getX(index)} ${getY(item.balance)}`;
+          })
+          .join(" ");
+
+        return (
+          <>
+            <path
+              d={incomePath}
+              fill="none"
+              stroke="#34d399"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            <path
+              d={expensesPath}
+              fill="none"
+              stroke="#fb7185"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            <path
+              d={balancePath}
+              fill="none"
+              stroke="#22d3ee"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {chartItems.map((item, index) => (
+              <g key={item.month}>
+                <circle
+                  cx={getX(index)}
+                  cy={getY(item.income)}
+                  r="5"
+                  fill="#34d399"
+                />
+
+                <circle
+                  cx={getX(index)}
+                  cy={getY(item.expenses)}
+                  r="5"
+                  fill="#fb7185"
+                />
+
+                <circle
+                  cx={getX(index)}
+                  cy={getY(item.balance)}
+                  r="5"
+                  fill="#22d3ee"
+                />
+
+
+                <text
+                  x={getX(index)}
+                  y="218"
+                  textAnchor="middle"
+                  className="fill-slate-500 text-xs"
+                >
+                  {item.month}
+                </text>
+              </g>
+            ))}
+          </>
+        );
+      })()}
+    </svg>
+  )}
+</div>
+
+<div className="mt-6 grid gap-4 sm:grid-cols-3">
+  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <p className="text-xs text-slate-400">
+      Ingresos del periodo
+    </p>
+
+    <p className="mt-2 text-xl font-semibold text-emerald-300">
+      £
+      {chartItems
+        .reduce((sum, item) => sum + item.income, 0)
+        .toFixed(2)}
+    </p>
+  </div>
+
+  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <p className="text-xs text-slate-400">
+      Gastos del periodo
+    </p>
+
+    <p className="mt-2 text-xl font-semibold text-rose-300">
+      £
+      {chartItems
+        .reduce((sum, item) => sum + item.expenses, 0)
+        .toFixed(2)}
+    </p>
+  </div>
+
+  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <p className="text-xs text-slate-400">
+      Balance del periodo
+    </p>
+
+    <p className="mt-2 text-xl font-semibold text-cyan-300">
+      £
+      {chartItems
+        .reduce((sum, item) => sum + item.balance, 0)
+        .toFixed(2)}
+    </p>
+  </div>
+</div>
+
+  <div className="mt-6 flex items-center gap-6 text-sm text-slate-400">
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+      Ingresos
+    </div>
+
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-rose-400" />
+      Gastos
+    </div>
+
+    <div className="flex items-center gap-2">
+  <span className="h-2 w-2 rounded-full bg-cyan-400" />
+  Balance
+</div>
+  </div>
+  <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+  <p className="text-sm text-slate-400">
+    Resumen del periodo
+  </p>
+
+  <p
+    className={`mt-2 font-medium ${
+      chartItems.reduce(
+        (sum, item) => sum + item.balance,
+        0
+      ) >= 0
+        ? "text-emerald-300"
+        : "text-rose-300"
+    }`}
+  >
+    {chartItems.reduce(
+      (sum, item) => sum + item.balance,
+      0
+    ) >= 0
+      ? "Balance positivo. Tus ingresos superan tus gastos en este periodo."
+      : "Atención. Tus gastos superan tus ingresos en este periodo."}
+  </p>
+</div>
+
+<div className="mt-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+  <p className="text-xs uppercase tracking-[0.2em] text-violet-300">
+    Insights de AVERO
+  </p>
+
+  <div className="mt-4 space-y-3 text-sm">
+    <p>
+      💰 Has generado{" "}
+      <span className="font-semibold text-emerald-300">
+        £{periodIncome.toFixed(2)}
+      </span>{" "}
+      durante el periodo analizado.
+    </p>
+
+    <p>
+      💸 Has gastado{" "}
+      <span className="font-semibold text-rose-300">
+        £{periodExpenses.toFixed(2)}
+      </span>.
+    </p>
+
+    <p>
+      📈 Tu tasa de ahorro es de{" "}
+      <span className="font-semibold text-cyan-300">
+        {savingsRate}%
+      </span>.
+    </p>
+
+    {budgetAlerts.map((alert) => (
+  <p key={alert.category}>
+    {alert.percentage >= 100 ? "🚨" : "⚠️"}{" "}
+    {alert.percentage >= 100
+      ? `Has superado el presupuesto de ${alert.category}.`
+      : `Has consumido el ${alert.percentage.toFixed(
+          0
+        )}% del presupuesto de ${alert.category}.`}
+  </p>
+))}
+
+    {topCategory && (
+  <p>
+    🎯 Tu mayor gasto ha sido{" "}
+    <span className="font-semibold">
+      {topCategory[0]}
+    </span>{" "}
+    con £{topCategory[1].toFixed(2)}.
+  </p>
+)}
+  </div>
+</div>
+</div>
+
+
+<div className="space-y-6">
+
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
           <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">
             Presupuestos
@@ -553,67 +1070,42 @@ if (isLoading) {
           <p className="text-sm text-slate-400">
             Este mes
           </p>
-          </div>
+        </div>
 
 
   <div className="mt-6 space-y-5">
-    {Object.entries(budgets).map(([category, limit]) => {
-      const spent = monthlyTransactions
-        .filter(
-          (transaction) =>
-            transaction.type === "expense" &&
-            transaction.category === category
-        )
-        .reduce(
-          (sum, transaction) =>
-            sum + Number(transaction.amount),
-          0
-        );
+  {personalBudget.map((item) => (
+    <div key={item.name}>
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="font-medium">
+            {item.name}
+          </p>
 
-      const percentage = Math.min(
-        (spent / limit) * 100,
-        100
-      );
+          <p className="text-xs text-slate-500">
+            {item.percentage}% de tus ingresos mensuales
+          </p>
+        </div>
 
-      return (
-        <div key={category}>
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span>
-                {categoryStyles[category]?.icon || "📦"}
-              </span>
+        <p className="text-sm font-medium text-slate-300">
+            £{item.limit.toFixed(2)}
+        </p>
+      </div>
 
-              <p className="capitalize">
-                {category}
-              </p>
-            </div>
-
-            <p className="text-sm text-slate-400">
-              £{spent.toFixed(0)} / £{limit}
-            </p>
-          </div>
-
-          <div className="h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className={`h-full rounded-full ${
-                percentage > 85
-                  ? "bg-rose-400"
-                  : percentage > 60
-                  ? "bg-amber-400"
-                  : "bg-emerald-400"
-              }`}
-              style={{
-                width: `${percentage}%`,
-              }}
-            />
-          </div>
-        </div> 
-      );
-    })}
+      <div className="h-3 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-violet-400"
+          style={{
+            width: `${item.percentage}%`,
+          }}
+        />
+      </div>
+    </div>
+  ))}
   </div>
 </div>
 
-<div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
   <h2 className="text-2xl font-semibold">
     Gastos por categoría
   </h2>
@@ -644,7 +1136,7 @@ if (isLoading) {
   </div>
 </div>
 
-<div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
   <div className="flex items-center justify-between">
     <h2 className="text-2xl font-semibold">
       Suscripciones
@@ -679,7 +1171,8 @@ if (isLoading) {
   </div>
 </div>
       </div>
-    </div>
+      </div>
+    
         <form
   onSubmit={handleAddTransaction}
   className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8"
