@@ -55,6 +55,21 @@ const categoryStyles: Record<
     text: "text-cyan-200",
     icon: "🏢",
   },
+  ahorro: {
+  bg: "bg-emerald-500/10",
+  text: "text-emerald-200",
+  icon: "🏦",
+},
+  inversion: {
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-200",
+    icon: "📈",
+  },
+  educacion: {
+    bg: "bg-violet-500/10",
+    text: "text-violet-200",
+    icon: "🎓",
+},
   impuestos: {
     bg: "bg-orange-500/10",
     text: "text-orange-200",
@@ -464,6 +479,24 @@ const savingsRate = periodIncome > 0
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
 
+const previousMonthDate = new Date();
+
+previousMonthDate.setMonth(
+  previousMonthDate.getMonth() - 1
+);
+
+const previousMonth =
+  previousMonthDate.getMonth();
+
+const previousYear =
+  previousMonthDate.getFullYear();
+
+const previousMonthLabel =
+  previousMonthDate.toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
+
 const monthlyTransactions = transactions.filter((transaction) => {
   const date = new Date(transaction.transaction_date);
 
@@ -477,16 +510,29 @@ const monthlyIncome = monthlyTransactions
   .filter((transaction) => transaction.type === "income")
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
+const previousMonthIncome = transactions
+  .filter((transaction) => {
+    const date = new Date(
+      transaction.transaction_date
+    );
+
+    return (
+      transaction.type === "income" &&
+      date.getMonth() === previousMonth &&
+      date.getFullYear() === previousYear
+    );
+  })
+  .reduce(
+    (sum, transaction) =>
+      sum + Number(transaction.amount),
+    0
+  );
+
 const monthlyExpenses = monthlyTransactions
   .filter((transaction) => transaction.type === "expense")
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
 const totalMovements = monthlyTransactions.length;
-
-// ============================
-// GASTOS POR CATEGORÍA
-// ============================
-
 
 // ============================
 // GASTOS POR CATEGORÍA
@@ -549,11 +595,11 @@ const personalBudgetCategories: Record<string, string[]> = {
     "impuestos",
   ],
 
-  Ahorro: [],
+  Ahorro: ["ahorro"],
 
-  Inversión: [],
+  Inversión: ["inversion"],
 
-  Educación: [],
+  Educación: ["educacion"],
 
   Entretenimiento: [
     "ocio",
@@ -561,40 +607,67 @@ const personalBudgetCategories: Record<string, string[]> = {
   ],
 };
 
-const personalBudget = Object.entries(
-  personalBudgetPercentages
-).map(([name, percentage]) => {
-  const limit = (monthlyIncome * percentage) / 100;
+const personalBudget = Object.entries(personalBudgetPercentages).map(
+  ([name, percentage]) => {
+    const limit = (previousMonthIncome * percentage) / 100;
 
-  const linkedCategories =
-    personalBudgetCategories[name] || [];
+    const linkedCategories = personalBudgetCategories[name] || [];
 
-  const spent = monthlyTransactions
-    .filter(
-      (transaction) =>
-        transaction.type === "expense" &&
-        linkedCategories.includes(transaction.category)
-    )
-    .reduce(
-      (sum, transaction) =>
-        sum + Number(transaction.amount),
-      0
-    );
+    const spent = monthlyTransactions
+      .filter(
+        (transaction) =>
+          transaction.type === "expense" &&
+          linkedCategories.includes(transaction.category)
+      )
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
-  const remaining = limit - spent;
+    const remaining = limit - spent;
 
-  const usedPercentage =
-    limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+    const usedPercentage =
+      limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
 
-  return {
-    name,
-    percentage,
-    limit,
-    spent,
-    remaining,
-    usedPercentage,
-  };
-});
+    return {
+      name,
+      percentage,
+      limit,
+      spent,
+      remaining,
+      usedPercentage,
+    };
+  }
+);
+
+const savingsTarget =
+  personalBudget.find((item) => item.name === "Ahorro")?.limit || 0;
+
+const investmentTarget =
+  personalBudget.find((item) => item.name === "Inversión")?.limit || 0;
+
+const futureTarget = savingsTarget + investmentTarget;
+
+const currentSavings = monthlyTransactions
+  .filter(
+    (transaction) =>
+      transaction.type === "expense" &&
+      transaction.category === "ahorro"
+  )
+  .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+const currentInvestment = monthlyTransactions
+  .filter(
+    (transaction) =>
+      transaction.type === "expense" &&
+      transaction.category === "inversion"
+  )
+  .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+const savingsProgress =
+  savingsTarget > 0 ? Math.min((currentSavings / savingsTarget) * 100, 100) : 0;
+
+const investmentProgress =
+  investmentTarget > 0
+    ? Math.min((currentInvestment / investmentTarget) * 100, 100)
+    : 0;
 
 const budgetAlerts = Object.entries(budgets)
   .map(([category, limit]) => {
@@ -652,7 +725,7 @@ const totalSubscriptions = subscriptions.reduce(
 if (isLoading) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050816] text-white">
-      <p className="text-slate-400">Cargando AVERO... v2</p>
+      <p className="text-slate-400">Cargando Avero, tu app de finanzas personal y empresarial</p>
     </main>
   );
 }
@@ -848,13 +921,6 @@ if (isLoading) {
           })
           .join(" ");
 
-          const balancePath = chartItems
-          .map((item, index) => {
-            const command = index === 0 ? "M" : "L";
-            return `${command} ${getX(index)} ${getY(item.balance)}`;
-          })
-          .join(" ");
-
         return (
           <>
             <path
@@ -875,14 +941,6 @@ if (isLoading) {
               strokeLinejoin="round"
             />
 
-            <path
-              d={balancePath}
-              fill="none"
-              stroke="#22d3ee"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
 
             {chartItems.map((item, index) => (
               <g key={item.month}>
@@ -899,14 +957,6 @@ if (isLoading) {
                   r="5"
                   fill="#fb7185"
                 />
-
-                <circle
-                  cx={getX(index)}
-                  cy={getY(item.balance)}
-                  r="5"
-                  fill="#22d3ee"
-                />
-
 
                 <text
                   x={getX(index)}
@@ -977,10 +1027,7 @@ if (isLoading) {
       Gastos
     </div>
 
-    <div className="flex items-center gap-2">
-  <span className="h-2 w-2 rounded-full bg-cyan-400" />
-  Balance
-</div>
+    
   </div>
   <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
   <p className="text-sm text-slate-400">
@@ -1056,6 +1103,121 @@ if (isLoading) {
 )}
   </div>
 </div>
+<div className="mt-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
+  <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
+    Objetivos financieros
+  </p>
+
+  <div className="mt-4 space-y-4">
+  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="font-medium">
+          🏦 Ahorro
+        </p>
+
+        <p className="mt-1 text-xs text-slate-500">
+          Colchón de tranquilidad
+        </p>
+      </div>
+
+      <p className="text-sm font-semibold text-emerald-300">
+        {savingsProgress.toFixed(0)}%
+      </p>
+    </div>
+
+    <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-400">
+      <div>
+        <p>Objetivo</p>
+        <p className="mt-1 font-medium text-white">
+          £{savingsTarget.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Actual</p>
+        <p className="mt-1 font-medium text-emerald-300">
+          £{currentSavings.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Falta</p>
+        <p className="mt-1 font-medium text-slate-300">
+          £{Math.max(savingsTarget - currentSavings, 0).toFixed(0)}
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+      <div
+        className="h-full rounded-full bg-emerald-400"
+        style={{ width: `${savingsProgress}%` }}
+      />
+    </div>
+  </div>
+
+  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="font-medium">
+          📈 Inversión
+        </p>
+
+        <p className="mt-1 text-xs text-slate-500">
+          ETFs / largo plazo
+        </p>
+      </div>
+
+      <p className="text-sm font-semibold text-cyan-300">
+        {investmentProgress.toFixed(0)}%
+      </p>
+    </div>
+
+    <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-400">
+      <div>
+        <p>Objetivo</p>
+        <p className="mt-1 font-medium text-white">
+          £{investmentTarget.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Actual</p>
+        <p className="mt-1 font-medium text-cyan-300">
+          £{currentInvestment.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Falta</p>
+        <p className="mt-1 font-medium text-slate-300">
+          £{Math.max(investmentTarget - currentInvestment, 0).toFixed(0)}
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+      <div
+        className="h-full rounded-full bg-cyan-400"
+        style={{ width: `${investmentProgress}%` }}
+      />
+    </div>
+  </div>
+
+  <div className="border-t border-white/10 pt-4">
+    <div className="flex items-center justify-between">
+      <span className="font-medium">
+        Total futuro objetivo
+      </span>
+
+      <span className="font-semibold text-white">
+        £{futureTarget.toFixed(0)}
+      </span>
+    </div>
+  </div>
+</div>
+</div>
 </div>
 
 
@@ -1063,45 +1225,88 @@ if (isLoading) {
 
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
           <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">
-            Presupuestos
-          </h2>
+  <h2 className="text-2xl font-semibold">
+    Presupuestos
+  </h2>
 
-          <p className="text-sm text-slate-400">
-            Este mes
-          </p>
-        </div>
+  <div className="text-right">
+    <p className="text-sm text-slate-400">
+      Este mes
+    </p>
+
+    <p className="mt-1 text-xs text-slate-500">
+      Basado en ingresos de {previousMonthLabel} (£{previousMonthIncome.toFixed(2)})
+</p>
+  </div>
+</div>
 
 
   <div className="mt-6 space-y-5">
   {personalBudget.map((item) => (
-    <div key={item.name}>
-      <div className="mb-2 flex items-center justify-between">
-        <div>
-          <p className="font-medium">
-            {item.name}
-          </p>
+  <div key={item.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="font-medium">
+          {item.name}
+        </p>
 
-          <p className="text-xs text-slate-500">
-            {item.percentage}% de tus ingresos mensuales
-          </p>
-        </div>
-
-        <p className="text-sm font-medium text-slate-300">
-            £{item.limit.toFixed(2)}
+        <p className="mt-1 text-xs text-slate-500">
+          {item.percentage}% de tus ingresos mensuales
         </p>
       </div>
 
-      <div className="h-3 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-violet-400"
-          style={{
-            width: `${item.percentage}%`,
-          }}
-        />
+      <p
+        className={`text-sm font-medium ${
+          item.remaining >= 0 ? "text-emerald-300" : "text-rose-300"
+        }`}
+      >
+        £{item.remaining.toFixed(2)}
+      </p>
+    </div>
+
+    <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-400">
+      <div>
+        <p>Objetivo</p>
+        <p className="mt-1 font-medium text-white">
+          £{item.limit.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Gastado</p>
+        <p className="mt-1 font-medium text-rose-300">
+          £{item.spent.toFixed(0)}
+        </p>
+      </div>
+
+      <div>
+        <p>Disponible</p>
+        <p
+          className={`mt-1 font-medium ${
+            item.remaining >= 0 ? "text-emerald-300" : "text-rose-300"
+          }`}
+        >
+          £{item.remaining.toFixed(0)}
+        </p>
       </div>
     </div>
-  ))}
+
+    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+      <div
+        className={`h-full rounded-full ${
+          item.usedPercentage >= 100
+            ? "bg-rose-400"
+            : item.usedPercentage >= 75
+            ? "bg-amber-400"
+            : "bg-violet-400"
+        }`}
+        style={{
+          width: `${item.usedPercentage}%`,
+        }}
+      />
+    </div>
+  </div>
+))}
   </div>
 </div>
 
@@ -1218,6 +1423,8 @@ if (isLoading) {
     >
       <option value="gasolina">Gasolina</option>
       <option value="comida">Comida</option>
+      <option value="inversion">Inversión</option>
+      <option value="educacion">Educación</option>
       <option value="tarjetas">Tarjetas</option>
       <option value="suscripciones">Suscripciones</option>
       <option value="coche">Coche</option>
@@ -1226,6 +1433,8 @@ if (isLoading) {
       <option value="impuestos">Impuestos</option>
       <option value="ocio">Ocio</option>
       <option value="otros">Otros</option>
+      <option value="ahorro">Ahorro</option>
+      
     </select>
       <input
   type="date"
