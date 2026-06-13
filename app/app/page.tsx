@@ -1002,7 +1002,7 @@ if (isLoading) {
 
     <p className="mt-2 text-xl font-semibold text-emerald-300">
       {formatMoney(
-        chartItems.reduce((sum, item) => sum + item.income, 0), currency
+        chartItems.reduce((sum, item) => sum + item.income, 0)
       )}
     </p>
 
@@ -1012,7 +1012,7 @@ if (isLoading) {
     </p>
 
     <p className="text-sm font-medium text-slate-300">
-      {formatMoney(averageIncome, currency)}
+      {formatMoney(averageIncome)}
     </p>
 </div>
   </div>
@@ -1033,7 +1033,7 @@ if (isLoading) {
       </p>
 
       <p className="text-sm font-medium text-slate-300">
-        {formatMoney(averageExpenses, currency)}
+        {formatMoney(averageExpenses)}
       </p>
     </div>
   </div>
@@ -1045,8 +1045,7 @@ if (isLoading) {
 
     <p className="mt-2 text-xl font-semibold text-cyan-300">
       {formatMoney(
-        chartItems.reduce((sum, item) => sum + item.balance, 0), 
-        currency
+        chartItems.reduce((sum, item) => sum + item.balance, 0)
       )}
     </p>
     <div className="mt-3">
@@ -1055,7 +1054,7 @@ if (isLoading) {
       </p>
 
       <p className="text-sm font-medium text-slate-300">
-        {formatMoney(averageBalance, currency)}
+        {formatMoney(averageBalance)}
       </p>
     </div>
   </div>
