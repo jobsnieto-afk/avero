@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
+import { formatCurrency } from "@/lib/formatters";
 
 type Transaction = {
   id: number;
@@ -88,6 +89,10 @@ const categoryStyles: Record<
 };
 
 export default function AppPage() {
+
+  const [currency] = useState<"GBP" | "EUR" | "USD" | "COP" | "MXN" | "ARS">("GBP");
+  const formatMoney = (value: number) =>
+  formatCurrency(value, currency);
 
    // ============================
   // ESTADOS DE AUTENTICACIÓN
@@ -468,6 +473,18 @@ const periodExpenses = chartItems.reduce(
 
 const periodBalance = periodIncome - periodExpenses;
 
+const monthsInPeriod = chartItems.length || 1;
+
+const averageIncome =
+  periodIncome / monthsInPeriod;
+
+const averageExpenses =
+  periodExpenses / monthsInPeriod;
+
+const averageBalance =
+  (periodIncome - periodExpenses) /
+  monthsInPeriod;
+
 const savingsRate = periodIncome > 0
     ? ((periodBalance / periodIncome) * 100).toFixed(1)
     : "0";
@@ -770,7 +787,7 @@ if (isLoading) {
     </p>
 
     <h2 className="mt-4 text-3xl font-semibold tracking-tight xl:text-3xl">
-      £{totalIncome.toFixed(2)}
+      {formatMoney(totalIncome)}
     </h2>
   </div>
 
@@ -780,7 +797,7 @@ if (isLoading) {
     </p>
 
     <h2 className="mt-4 text-3xl font-semibold tracking-tight xl:text-3xl">
-      £{totalExpenses.toFixed(2)}
+      {formatMoney(totalExpenses)}
     </h2>
   </div>
 
@@ -790,7 +807,7 @@ if (isLoading) {
     </p>
 
     <h2 className="mt-4 text-3xl font-semibold tracking-tight text-emerald-300 xl:text-3xl">
-      £{balance.toFixed(2)}
+      {formatMoney(balance)}
     </h2>
   </div>
 </div>
@@ -806,7 +823,7 @@ if (isLoading) {
     </p>
 
     <h3 className="mt-4 text-2xl font-semibold tracking-tight text-rose-300 xl:text-3xl">
-      £{monthlyExpenses.toFixed(2)}
+      {formatMoney(monthlyExpenses)}
     </h3>
   </div>
 
@@ -816,7 +833,7 @@ if (isLoading) {
     </p>
 
     <h3 className="mt-4 text-2xl font-semibold tracking-tight text-emerald-300 xl:text-3xl">
-      £{monthlyIncome.toFixed(2)}
+      {formatMoney(monthlyIncome)}
     </h3>
   </div>
 
@@ -841,7 +858,7 @@ if (isLoading) {
       </p>
 
       <h2 className="mt-3 text-3xl font-semibold">
-        Ingresos · Gastos · Balance
+        Ingresos · Gastos
       </h2>
     </div>
 
@@ -927,7 +944,7 @@ if (isLoading) {
               d={incomePath}
               fill="none"
               stroke="#34d399"
-              strokeWidth="5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -936,7 +953,7 @@ if (isLoading) {
               d={expensesPath}
               fill="none"
               stroke="#fb7185"
-              strokeWidth="5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -947,17 +964,18 @@ if (isLoading) {
                 <circle
                   cx={getX(index)}
                   cy={getY(item.income)}
-                  r="5"
+                  r="3"
                   fill="#34d399"
                 />
 
                 <circle
                   cx={getX(index)}
                   cy={getY(item.expenses)}
-                  r="5"
+                  r="3"
                   fill="#fb7185"
                 />
 
+                {index % 4 === 0 && (
                 <text
                   x={getX(index)}
                   y="218"
@@ -966,6 +984,7 @@ if (isLoading) {
                 >
                   {item.month}
                 </text>
+)}
               </g>
             ))}
           </>
@@ -982,11 +1001,20 @@ if (isLoading) {
     </p>
 
     <p className="mt-2 text-xl font-semibold text-emerald-300">
-      £
-      {chartItems
-        .reduce((sum, item) => sum + item.income, 0)
-        .toFixed(2)}
+      {formatMoney(
+        chartItems.reduce((sum, item) => sum + item.income, 0), currency
+      )}
     </p>
+
+    <div className="mt-3">
+    <p className="text-[11px] uppercase tracking-wide text-slate-500">
+      Promedio mensual
+    </p>
+
+    <p className="text-sm font-medium text-slate-300">
+      {formatMoney(averageIncome, currency)}
+    </p>
+</div>
   </div>
 
   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -995,11 +1023,19 @@ if (isLoading) {
     </p>
 
     <p className="mt-2 text-xl font-semibold text-rose-300">
-      £
-      {chartItems
-        .reduce((sum, item) => sum + item.expenses, 0)
-        .toFixed(2)}
+      {formatMoney(
+        chartItems.reduce((sum, item) => sum + item.expenses, 0),
+      )}
     </p>
+    <div className="mt-3">
+      <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        Promedio mensual
+      </p>
+
+      <p className="text-sm font-medium text-slate-300">
+        {formatMoney(averageExpenses, currency)}
+      </p>
+    </div>
   </div>
 
   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -1008,11 +1044,20 @@ if (isLoading) {
     </p>
 
     <p className="mt-2 text-xl font-semibold text-cyan-300">
-      £
-      {chartItems
-        .reduce((sum, item) => sum + item.balance, 0)
-        .toFixed(2)}
+      {formatMoney(
+        chartItems.reduce((sum, item) => sum + item.balance, 0), 
+        currency
+      )}
     </p>
+    <div className="mt-3">
+      <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        Promedio mensual
+      </p>
+
+      <p className="text-sm font-medium text-slate-300">
+        {formatMoney(averageBalance, currency)}
+      </p>
+    </div>
   </div>
 </div>
 
@@ -1062,7 +1107,7 @@ if (isLoading) {
     <p>
       💰 Has generado{" "}
       <span className="font-semibold text-emerald-300">
-        £{periodIncome.toFixed(2)}
+        {formatMoney(periodIncome)}
       </span>{" "}
       durante el periodo analizado.
     </p>
@@ -1070,7 +1115,7 @@ if (isLoading) {
     <p>
       💸 Has gastado{" "}
       <span className="font-semibold text-rose-300">
-        £{periodExpenses.toFixed(2)}
+        {formatMoney(periodExpenses)}
       </span>.
     </p>
 
@@ -1086,9 +1131,11 @@ if (isLoading) {
     {alert.percentage >= 100 ? "🚨" : "⚠️"}{" "}
     {alert.percentage >= 100
       ? `Has superado el presupuesto de ${alert.category}.`
-      : `Has consumido el ${alert.percentage.toFixed(
-          0
-        )}% del presupuesto de ${alert.category}.`}
+      : `Has consumido el ${alert.percentage.toFixed(0)
+
+      }
+      % del presupuesto de ${alert.category}.`
+      }
   </p>
 ))}
 
@@ -1098,7 +1145,7 @@ if (isLoading) {
     <span className="font-semibold">
       {topCategory[0]}
     </span>{" "}
-    con £{topCategory[1].toFixed(2)}.
+    con {formatMoney(topCategory[1])}.
   </p>
 )}
   </div>
@@ -1130,21 +1177,21 @@ if (isLoading) {
       <div>
         <p>Objetivo</p>
         <p className="mt-1 font-medium text-white">
-          £{savingsTarget.toFixed(0)}
+          {formatMoney(savingsTarget)}
         </p>
       </div>
 
       <div>
         <p>Actual</p>
         <p className="mt-1 font-medium text-emerald-300">
-          £{currentSavings.toFixed(0)}
+          {formatMoney(currentSavings)}
         </p>
       </div>
 
       <div>
         <p>Falta</p>
         <p className="mt-1 font-medium text-slate-300">
-          £{Math.max(savingsTarget - currentSavings, 0).toFixed(0)}
+          {formatMoney(Math.max(savingsTarget - currentSavings, 0))}
         </p>
       </div>
     </div>
@@ -1178,21 +1225,21 @@ if (isLoading) {
       <div>
         <p>Objetivo</p>
         <p className="mt-1 font-medium text-white">
-          £{investmentTarget.toFixed(0)}
+          {formatMoney(investmentTarget)}
         </p>
       </div>
 
       <div>
         <p>Actual</p>
         <p className="mt-1 font-medium text-cyan-300">
-          £{currentInvestment.toFixed(0)}
+          {formatMoney(currentInvestment)}
         </p>
       </div>
 
       <div>
         <p>Falta</p>
         <p className="mt-1 font-medium text-slate-300">
-          £{Math.max(investmentTarget - currentInvestment, 0).toFixed(0)}
+          {formatMoney(Math.max(investmentTarget - currentInvestment, 0))}
         </p>
       </div>
     </div>
@@ -1212,7 +1259,7 @@ if (isLoading) {
       </span>
 
       <span className="font-semibold text-white">
-        £{futureTarget.toFixed(0)}
+        {formatMoney(futureTarget)}
       </span>
     </div>
   </div>
@@ -1235,7 +1282,8 @@ if (isLoading) {
     </p>
 
     <p className="mt-1 text-xs text-slate-500">
-      Basado en ingresos de {previousMonthLabel} (£{previousMonthIncome.toFixed(2)})
+      Basado en ingresos de {previousMonthLabel} 
+      {formatMoney(previousMonthIncome)}
 </p>
   </div>
 </div>
@@ -1260,7 +1308,7 @@ if (isLoading) {
           item.remaining >= 0 ? "text-emerald-300" : "text-rose-300"
         }`}
       >
-        £{item.remaining.toFixed(2)}
+        {formatMoney(item.remaining)}
       </p>
     </div>
 
@@ -1268,14 +1316,14 @@ if (isLoading) {
       <div>
         <p>Objetivo</p>
         <p className="mt-1 font-medium text-white">
-          £{item.limit.toFixed(0)}
+          {formatMoney(item.limit)}
         </p>
       </div>
 
       <div>
         <p>Gastado</p>
         <p className="mt-1 font-medium text-rose-300">
-          £{item.spent.toFixed(0)}
+          {formatMoney(item.spent)}
         </p>
       </div>
 
@@ -1286,7 +1334,7 @@ if (isLoading) {
             item.remaining >= 0 ? "text-emerald-300" : "text-rose-300"
           }`}
         >
-          £{item.remaining.toFixed(0)}
+          {formatMoney(item.remaining)}
         </p>
       </div>
     </div>
@@ -1334,7 +1382,7 @@ if (isLoading) {
           </div>
 
           <span className="font-medium">
-            £{amount.toFixed(2)}
+            {formatMoney(amount)}
           </span>
         </div>
       ))}
@@ -1348,7 +1396,7 @@ if (isLoading) {
     </h2>
 
     <p className="text-sm text-slate-400">
-      £{totalSubscriptions.toFixed(2)} / mes
+      {formatMoney(totalSubscriptions)} / mes
     </p>
   </div>
 
@@ -1364,7 +1412,7 @@ if (isLoading) {
           </p>
 
           <p className="font-semibold text-violet-300">
-            £{subscription.amount.toFixed(2)}
+            {formatMoney(subscription.amount)}
           </p>
         </div>
 
@@ -1614,8 +1662,8 @@ if (isLoading) {
               : "text-rose-300"
           }`}
         >
-          {transaction.type === "income" ? "+" : "-"}£
-          {Number(transaction.amount).toFixed(2)}
+          {transaction.type === "income" ? "+" : "-"}
+          {formatMoney(Number(transaction.amount))}
         </p>
 
         <button
