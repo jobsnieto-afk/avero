@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://avero.pro"),
+  
   title: "AVERO | Finanzas personales y empresariales",
   description:
     "AVERO une tus finanzas personales y empresariales en una plataforma moderna, clara y visual.",
