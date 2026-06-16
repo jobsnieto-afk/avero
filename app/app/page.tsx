@@ -17,6 +17,8 @@ type Transaction = {
 };
 
 
+
+
 const categoryStyles: Record<
   string,
   { bg: string; text: string; icon: string }
@@ -93,6 +95,18 @@ export default function AppPage() {
   const [currency] = useState<"GBP" | "EUR" | "USD" | "COP" | "MXN" | "ARS">("GBP");
   const formatMoney = (value: number) =>
   formatCurrency(value, currency);
+
+  const [activeTab, setActiveTab] = useState<
+  "summary" | "transactions" | "budget" | "history" | "goals"
+>("summary");
+
+const tabs = [
+  { id: "summary", label: "Resumen" },
+  { id: "transactions", label: "Movimientos" },
+  { id: "budget", label: "Presupuestos" },
+  { id: "history", label: "Histórico" },
+  { id: "goals", label: "Objetivos" },
+] as const;
 
    // ============================
   // ESTADOS DE AUTENTICACIÓN
@@ -374,6 +388,7 @@ function formatDate(dateString: string) {
   });
 }
 
+
 // ============================
 // CÁLCULOS DEL DASHBOARD
 // ============================
@@ -388,6 +403,146 @@ const totalExpenses = transactions
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
 const balance = totalIncome - totalExpenses;
+
+// ============================
+// COMPARATIVA POR AÑOS FISCALES
+// UK fiscal year: abril - marzo
+// ============================
+
+const fiscalYears = [
+  {
+    label: "2023-2024",
+    start: "2023-04-01",
+    end: "2024-03-31",
+  },
+  {
+    label: "2024-2025",
+    start: "2024-04-01",
+    end: "2025-03-31",
+  },
+  {
+    label: "2025-2026",
+    start: "2025-04-01",
+    end: "2026-03-31",
+  },
+];
+
+const fiscalSummary = fiscalYears.map((year) => {
+  
+  const yearTransactions = transactions.filter((transaction) => {
+    const date = new Date(transaction.transaction_date);
+
+    return (
+      date >= new Date(year.start) &&
+      date <= new Date(year.end)
+    );
+  });
+
+
+  const income = yearTransactions
+    .filter((transaction) => transaction.type === "income")
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+  const expenses = yearTransactions
+    .filter((transaction) => transaction.type === "expense")
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+  const balance = income - expenses;
+
+  const margin =
+    income > 0 ? (balance / income) * 100 : 0;
+
+  return {
+    label: year.label,
+    income,
+    expenses,
+    balance,
+    margin,
+  };
+});
+
+const latestFiscalYear =
+  fiscalSummary[fiscalSummary.length - 1];
+
+const previousFiscalYear =
+  fiscalSummary[fiscalSummary.length - 2];
+
+  const incomeGrowth =
+  previousFiscalYear?.income
+    ? (
+        ((latestFiscalYear.income -
+          previousFiscalYear.income) /
+          previousFiscalYear.income) *
+        100
+      )
+    : 0;
+
+const expenseGrowth =
+  previousFiscalYear?.expenses
+    ? (
+        ((latestFiscalYear.expenses -
+          previousFiscalYear.expenses) /
+          previousFiscalYear.expenses) *
+        100
+      )
+    : 0;
+
+const balanceGrowth =
+  previousFiscalYear?.balance
+    ? (
+        ((latestFiscalYear.balance -
+          previousFiscalYear.balance) /
+          previousFiscalYear.balance) *
+        100
+      )
+    : 0;
+
+    const fiscalInsight =
+  expenseGrowth > incomeGrowth
+    ? {
+        tone: "warning",
+        message:
+          "Tus gastos crecieron más rápido que tus ingresos durante el último ejercicio fiscal.",
+        detail: `Los ingresos crecieron un ${incomeGrowth.toFixed(
+          1
+        )}%, mientras que los gastos crecieron un ${expenseGrowth.toFixed(
+          1
+        )}%.`,
+      }
+    : {
+        tone: "positive",
+        message:
+          "Tus ingresos crecieron más rápido que tus gastos durante el último ejercicio fiscal.",
+        detail: `Los ingresos crecieron un ${incomeGrowth.toFixed(
+          1
+        )}%, mientras que los gastos crecieron un ${expenseGrowth.toFixed(
+          1
+        )}%.`,
+      };
+
+      const latestFiscalYearTransactions = transactions.filter((transaction) => {
+  const date = new Date(transaction.transaction_date);
+
+  return (
+    date >= new Date(fiscalYears[fiscalYears.length - 1].start) &&
+    date <= new Date(fiscalYears[fiscalYears.length - 1].end)
+  );
+});
+
+const latestFiscalExpensesByCategory = latestFiscalYearTransactions
+  .filter((transaction) => transaction.type === "expense")
+  .reduce((acc, transaction) => {
+    const category = transaction.category;
+
+    acc[category] =
+      (acc[category] || 0) + Number(transaction.amount);
+
+    return acc;
+  }, {} as Record<string, number>);
+
+const topFiscalExpenses = Object.entries(latestFiscalExpensesByCategory)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 3);
 
 // ============================
 // DATOS DEL GRÁFICO PRINCIPAL
@@ -773,13 +928,25 @@ if (isLoading) {
           </button>
         </div>
 
+        <div className="mt-8 flex flex-wrap gap-3">
+  {tabs.map((tab) => (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id)}
+      className={`rounded-2xl border px-5 py-3 font-medium transition ${
+        activeTab === tab.id
+          ? "border-cyan-500 bg-cyan-500 text-white"
+          : "border-white/10 bg-white/5 text-slate-300 hover:text-white"
+      }`}
+    >
+      {tab.label}
+    </button>
+  ))}
+</div>
 
-        {/*
-        
-============================
-    RESUMEN GENERAL
-============================ */}
 
+{activeTab === "summary" && (
+  <>
 <div className="mt-12 grid gap-6 md:grid-cols-3">
   <div className="min-w-0 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
     <p className="text-sm text-slate-400">
@@ -1130,11 +1297,8 @@ if (isLoading) {
     {alert.percentage >= 100 ? "🚨" : "⚠️"}{" "}
     {alert.percentage >= 100
       ? `Has superado el presupuesto de ${alert.category}.`
-      : `Has consumido el ${alert.percentage.toFixed(0)
-
-      }
-      % del presupuesto de ${alert.category}.`
-      }
+      : `Has consumido el ${alert.percentage.toFixed(0)} % del presupuesto de ${alert.category}.`
+    }
   </p>
 ))}
 
@@ -1263,14 +1427,89 @@ if (isLoading) {
     </div>
   </div>
 </div>
-</div>
-</div>
 
+  
+</div>
+</div>
 
 <div className="space-y-6">
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-          <div className="flex items-center justify-between">
+<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <h2 className="text-2xl font-semibold">
+    Gastos por categoría
+  </h2>
+
+  <div className="mt-6 space-y-4">
+    {Object.entries(expensesByCategory)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, amount]) => (
+        <div
+          key={category}
+          className="flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">
+              {categoryStyles[category]?.icon || "📦"}
+            </span>
+
+            <span className="capitalize">
+              {category}
+            </span>
+          </div>
+
+          <span className="font-medium">
+            {formatMoney(amount)}
+          </span>
+        </div>
+      ))}
+  </div>
+</div>
+
+<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <div className="flex items-center justify-between">
+    <h2 className="text-2xl font-semibold">
+      Suscripciones
+    </h2>
+
+    <p className="text-sm text-slate-400">
+      {formatMoney(totalSubscriptions)} / mes
+    </p>
+  </div>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2">
+    {subscriptions.map((subscription) => (
+      <div
+        key={subscription.name}
+        className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+      >
+        <div className="flex items-center justify-between">
+          <p className="font-medium">
+            {subscription.name}
+          </p>
+
+          <p className="font-semibold text-violet-300">
+            {formatMoney(subscription.amount)}
+          </p>
+        </div>
+
+        <p className="mt-2 text-sm text-slate-400">
+          Se cobra el día {subscription.day} de cada mes
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
+      </div>
+      </div>
+       </>
+)}
+
+{activeTab === "budget" && (
+  <>
+  {/* Presupuestos */
+    
+    <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+      <div className="flex items-center justify-between">
   <h2 className="text-2xl font-semibold">
     Presupuestos
   </h2>
@@ -1356,75 +1595,12 @@ if (isLoading) {
 ))}
   </div>
 </div>
+}
+  </>
+)}
 
-<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-  <h2 className="text-2xl font-semibold">
-    Gastos por categoría
-  </h2>
-
-  <div className="mt-6 space-y-4">
-    {Object.entries(expensesByCategory)
-      .sort((a, b) => b[1] - a[1])
-      .map(([category, amount]) => (
-        <div
-          key={category}
-          className="flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-lg">
-              {categoryStyles[category]?.icon || "📦"}
-            </span>
-
-            <span className="capitalize">
-              {category}
-            </span>
-          </div>
-
-          <span className="font-medium">
-            {formatMoney(amount)}
-          </span>
-        </div>
-      ))}
-  </div>
-</div>
-
-<div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-  <div className="flex items-center justify-between">
-    <h2 className="text-2xl font-semibold">
-      Suscripciones
-    </h2>
-
-    <p className="text-sm text-slate-400">
-      {formatMoney(totalSubscriptions)} / mes
-    </p>
-  </div>
-
-  <div className="mt-6 grid gap-4 md:grid-cols-2">
-    {subscriptions.map((subscription) => (
-      <div
-        key={subscription.name}
-        className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
-      >
-        <div className="flex items-center justify-between">
-          <p className="font-medium">
-            {subscription.name}
-          </p>
-
-          <p className="font-semibold text-violet-300">
-            {formatMoney(subscription.amount)}
-          </p>
-        </div>
-
-        <p className="mt-2 text-sm text-slate-400">
-          Se cobra el día {subscription.day} de cada mes
-        </p>
-      </div>
-    ))}
-  </div>
-</div>
-      </div>
-      </div>
-    
+{activeTab === "transactions" && (
+  <>
         <form
   onSubmit={handleAddTransaction}
   className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8"
@@ -1717,6 +1893,198 @@ if (isLoading) {
 )}
 </div>
 </div>
+  </>
+)}
+
+{activeTab === "history" && (
+  <>
+    <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-violet-300">
+        Años fiscales
+      </p>
+
+      <h2 className="mt-2 text-2xl font-semibold">
+        Comparativa anual
+      </h2>
+    </div>
+
+    <p className="text-sm text-slate-400">
+      UK · Abril - Marzo
+    </p>
+  </div>
+
+  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+    <p className="text-xs text-slate-400">
+      Ingresos
+    </p>
+
+    <p
+      className={`mt-1 font-semibold ${
+        incomeGrowth >= 0
+          ? "text-emerald-300"
+          : "text-rose-300"
+      }`}
+    >
+      {incomeGrowth >= 0 ? "▲" : "▼"}{" "}
+      {Math.abs(incomeGrowth).toFixed(1)}%
+    </p>
+  </div>
+
+  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3">
+    <p className="text-xs text-slate-400">
+      Gastos
+    </p>
+
+    <p
+      className={`mt-1 font-semibold ${
+        expenseGrowth <= 0
+          ? "text-emerald-300"
+          : "text-rose-300"
+      }`}
+    >
+      {expenseGrowth >= 0 ? "▲" : "▼"}{" "}
+      {Math.abs(expenseGrowth).toFixed(1)}%
+    </p>
+  </div>
+
+
+  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3">
+    <p className="text-xs text-slate-400">
+      Beneficio
+    </p>
+
+    <p
+      className={`mt-1 font-semibold ${
+        balanceGrowth >= 0
+          ? "text-emerald-300"
+          : "text-rose-300"
+      }`}
+    >
+      {balanceGrowth >= 0 ? "▲" : "▼"}{" "}
+      {Math.abs(balanceGrowth).toFixed(1)}%
+    </p>
+  </div>
+</div>
+
+<div
+  className={`mt-4 rounded-2xl border p-4 ${
+    fiscalInsight.tone === "warning"
+      ? "border-amber-500/20 bg-amber-500/5"
+      : "border-emerald-500/20 bg-emerald-500/5"
+  }`}
+>
+  <p
+    className={`font-medium ${
+      fiscalInsight.tone === "warning"
+        ? "text-amber-300"
+        : "text-emerald-300"
+    }`}
+  >
+    {fiscalInsight.tone === "warning" ? "⚠️" : "✅"}{" "}
+    {fiscalInsight.message}
+  </p>
+
+  <p className="mt-2 text-sm text-slate-400">
+    {fiscalInsight.detail}
+  </p>
+</div>
+{topFiscalExpenses.length > 0 && (
+  <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <p className="text-sm font-medium">
+      Top gastos del último año fiscal
+    </p>
+
+    <div className="mt-4 space-y-3">
+      {topFiscalExpenses.map(([category, amount]) => (
+        <div key={category}>
+          <div className="mb-1 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span>
+                {categoryStyles[category]?.icon || "📦"}
+              </span>
+
+              <span className="capitalize text-slate-300">
+                {category}
+              </span>
+            </div>
+
+            <span className="font-medium">
+              {formatMoney(amount)}
+            </span>
+          </div>
+
+          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-rose-400"
+              style={{
+                width: `${
+                  (amount / topFiscalExpenses[0][1]) * 100
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+  <div className="mt-6 space-y-4">
+    {fiscalSummary.map((year) => (
+      <div
+        key={year.label}
+        className={`rounded-2xl border p-4 ${year.label === latestFiscalYear.label 
+          ? "border-cyan-500/30 bg-cyan-500/5": 
+          "border-white/10 bg-white/[0.03]"
+}`}
+      >
+        <div className="flex items-center justify-between">
+          <p className="font-medium">
+            {year.label}
+          </p>
+
+          <p
+            className={`text-sm font-semibold ${
+              year.balance >= 0
+                ? "text-emerald-300"
+                : "text-rose-300"
+            }`}
+          >
+            {formatMoney(year.balance)}
+          </p>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-400">
+          <div>
+            <p>Ingresos</p>
+            <p className="mt-1 font-medium text-emerald-300">
+              {formatMoney(year.income)}
+            </p>
+          </div>
+
+          <div>
+            <p>Gastos</p>
+            <p className="mt-1 font-medium text-rose-300">
+              {formatMoney(year.expenses)}
+            </p>
+          </div>
+
+          <div>
+            <p>Margen</p>
+            <p className="mt-1 font-medium text-cyan-300">
+              {year.margin.toFixed(1)}%
+            </p>
+          </div>
+        </div>
+        
+      </div>
+    ))}
+  </div>
+</div>
+  </>
+)}
       </div>
     </main>
   );
