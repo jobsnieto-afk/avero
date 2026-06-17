@@ -1,20 +1,38 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/formatters";
 
+
+import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardTabs } from "./components/DashboardTabs";
-import { GoalsTab } from "./components/GoalsTab";
-import { HistoryTab } from "./components/HistoryTab";
+import { SummaryTab } from "./components/SummaryTab";
 import { BudgetTab } from "./components/BudgetTab";
 import { TransactionsTab } from "./components/TransactionsTab";
-import { SummaryTab } from "./components/SummaryTab";
-import { DashboardHeader } from "./components/DashboardHeader";
+import { HistoryTab } from "./components/HistoryTab";
+import { GoalsTab } from "./components/GoalsTab";
+import { calculateGoals } from "./utils/goals";
+import { getSortedTransactions } from "./utils/transactions";
+
+
+import {
+  budgets,
+  categoryStyles,
+  defaultCategory,
+} from "./constants/categories";
+
+import {
+  calculateExpensesByCategory,
+  getTopExpenseCategory,
+} from "./utils/categories";
+
+import {
+  calculateBudgetAlerts,
+  calculatePersonalBudget,
+} from "./utils/budget";
 
 import type {
   ActiveTab,
@@ -29,78 +47,6 @@ import type {
 } from "./types";
 
 import type { SubmitEvent } from "react";
-
-
-const categoryStyles: Record<
-  string,
-  { bg: string; text: string; icon: string }
-> = {
-  gasolina: {
-    bg: "bg-amber-500/10",
-    text: "text-amber-200",
-    icon: "⛽",
-  },
-  comida: {
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-200",
-    icon: "🍔",
-  },
-  tarjetas: {
-    bg: "bg-rose-500/10",
-    text: "text-rose-200",
-    icon: "💳",
-  },
-  suscripciones: {
-    bg: "bg-violet-500/10",
-    text: "text-violet-200",
-    icon: "📺",
-  },
-  coche: {
-    bg: "bg-blue-500/10",
-    text: "text-blue-200",
-    icon: "🚗",
-  },
-  casa: {
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-200",
-    icon: "🏠",
-  },
-  negocio: {
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-200",
-    icon: "🏢",
-  },
-  ahorro: {
-  bg: "bg-emerald-500/10",
-  text: "text-emerald-200",
-  icon: "🏦",
-},
-  inversion: {
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-200",
-    icon: "📈",
-  },
-  educacion: {
-    bg: "bg-violet-500/10",
-    text: "text-violet-200",
-    icon: "🎓",
-},
-  impuestos: {
-    bg: "bg-orange-500/10",
-    text: "text-orange-200",
-    icon: "📄",
-  },
-  ocio: {
-    bg: "bg-pink-500/10",
-    text: "text-pink-200",
-    icon: "🎮",
-  },
-  otros: {
-    bg: "bg-slate-500/10",
-    text: "text-slate-200",
-    icon: "📦",
-  },
-};
 
 export default function AppPage() {
 
@@ -145,7 +91,7 @@ export default function AppPage() {
 
     const [type, setType] = useState<TransactionType>("expense");
     const [amount, setAmount] = useState("");
-    const [category, setCategory] = useState("gasolina");
+    const [category, setCategory] = useState(defaultCategory);
     const [note, setNote] = useState("");
     
     // ============================
@@ -165,34 +111,11 @@ export default function AppPage() {
 
 
 
-  // ============================
-// FILTROS Y BÚSQUEDAS
-// ============================
-
-    const filteredTransactions = transactions.filter((transaction) => {
-    const matchesFilter =
-    filter === "all" || transaction.type === filter;
-
-  const matchesSearch =
-    transaction.category.toLowerCase().includes(search.toLowerCase()) ||
-    transaction.note?.toLowerCase().includes(search.toLowerCase());
-
-  return matchesFilter && matchesSearch;
-});
-
-const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-  if (sortBy === "amount") {
-    return Number(b.amount) - Number(a.amount);
-  }
-
-  if (sortBy === "category") {
-    return a.category.localeCompare(b.category);
-  }
-
-  return (
-    new Date(b.transaction_date).getTime() -
-    new Date(a.transaction_date).getTime()
-  );
+const sortedTransactions = getSortedTransactions({
+  transactions,
+  filter,
+  search,
+  sortBy,
 });
 
 // ============================
@@ -708,51 +631,22 @@ const monthlyExpenses = monthlyTransactions
 
 const totalMovements = monthlyTransactions.length;
 
-const expensesByCategory = transactions
-  .filter((transaction) => transaction.type === "expense")
-  .reduce((acc, transaction) => {
-    const category = transaction.category;
+const monthlyExpensesByCategory =
+  calculateExpensesByCategory(monthlyTransactions);
 
-    acc[category] = (acc[category] || 0) + Number(transaction.amount);
+const allTimeExpensesByCategory =
+  calculateExpensesByCategory(transactions);
 
-    return acc;
-  }, {} as Record<string, number>);
+const monthlyTopCategory =
+  getTopExpenseCategory(monthlyExpensesByCategory);
 
-  const topCategory =
-  Object.entries(expensesByCategory)
-    .sort((a, b) => b[1] - a[1])[0];
-
-    
+const allTimeTopCategory =
+  getTopExpenseCategory(allTimeExpensesByCategory);
 
 // ============================
 // PRESUPUESTOS
 // ============================
 
-const budgets: Record<string, number> = {
-  gasolina: 400,
-  comida: 300,
-  suscripciones: 80,
-  tarjetas: 250,
-  negocio: 1000,
-  otros: 500,
-  coche: 300,
-  casa: 1200,
-  impuestos: 500,
-  ocio: 200,
-};
-
-// ============================
-// PRESUPUESTO PERSONAL
-// Método porcentual
-// ============================
-
-const personalBudgetPercentages: Record<string, number> = {
-  "Necesidades básicas": 50,
-  Ahorro: 15,
-  Inversión: 15,
-  Educación: 10,
-  Entretenimiento: 10,
-};
 
 const personalBudgetCategories: Record<string, string[]> = {
   "Necesidades básicas": [
@@ -775,94 +669,33 @@ const personalBudgetCategories: Record<string, string[]> = {
   ],
 };
 
-const personalBudget = Object.entries(personalBudgetPercentages).map(
-  ([name, percentage]) => {
-    const limit = (previousMonthIncome * percentage) / 100;
+const personalBudget = calculatePersonalBudget({
+  previousMonthIncome,
+  monthlyTransactions,
+});
 
-    const linkedCategories = personalBudgetCategories[name] || [];
+const {
+  emergencyFundTarget,
+  monthlySavingsTarget,
+  monthlyInvestmentTarget,
+  monthlyGoalsTarget,
+  longTermSavingsTarget,
+  longTermInvestmentTarget,
+  longTermTarget,
+  currentSavings,
+  currentInvestment,
+  savingsProgress,
+  investmentProgress,
+} = calculateGoals({
+  monthlyExpenses,
+  personalBudget,
+  monthlyTransactions,
+});
 
-    const spent = monthlyTransactions
-      .filter(
-        (transaction) =>
-          transaction.type === "expense" &&
-          linkedCategories.includes(transaction.category)
-      )
-      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-    const remaining = limit - spent;
-
-    const usedPercentage =
-      limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-
-    return {
-      name,
-      percentage,
-      limit,
-      spent,
-      remaining,
-      usedPercentage,
-    };
-  }
-);
-
-const savingsTarget =
-  personalBudget.find((item) => item.name === "Ahorro")?.limit || 0;
-
-const investmentTarget =
-  personalBudget.find((item) => item.name === "Inversión")?.limit || 0;
-
-  const emergencyFundTarget = Math.max(monthlyExpenses * 3, 3000);
-
-const futureTarget = savingsTarget + investmentTarget;
-
-const currentSavings = monthlyTransactions
-  .filter(
-    (transaction) =>
-      transaction.type === "expense" &&
-      transaction.category === "ahorro"
-  )
-  .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-const currentInvestment = monthlyTransactions
-  .filter(
-    (transaction) =>
-      transaction.type === "expense" &&
-      transaction.category === "inversion"
-  )
-  .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-const savingsProgress =
-  savingsTarget > 0 ? Math.min((currentSavings / savingsTarget) * 100, 100) : 0;
-
-const investmentProgress =
-  investmentTarget > 0
-    ? Math.min((currentInvestment / investmentTarget) * 100, 100)
-    : 0;
-
-const budgetAlerts = Object.entries(budgets)
-  .map(([category, limit]) => {
-    const spent = monthlyTransactions
-      .filter(
-        (transaction) =>
-          transaction.type === "expense" &&
-          transaction.category === category
-      )
-      .reduce(
-        (sum, transaction) =>
-          sum + Number(transaction.amount),
-        0
-      );
-
-    const percentage = (spent / limit) * 100;
-
-    return {
-      category,
-      spent,
-      limit,
-      percentage,
-    };
-  })
-  .filter((item) => item.percentage >= 75);
+const budgetAlerts = calculateBudgetAlerts({
+  budgets,
+  monthlyTransactions,
+});
 
 const subscriptions = [
   {
@@ -931,22 +764,23 @@ if (isLoading) {
           periodExpenses={periodExpenses}
           savingsRate={savingsRate}
           budgetAlerts={budgetAlerts}
-          topCategory={topCategory}
+          monthlyTopCategory={monthlyTopCategory}
+          allTimeTopCategory={allTimeTopCategory}
           subscriptions={subscriptions}
           totalSubscriptions={totalSubscriptions}
           formatMoney={formatMoney}
         />
-    )}
+)}
 
       {activeTab === "budget" && (
-        <BudgetTab
-          personalBudget={personalBudget}
-          previousMonthLabel={previousMonthLabel}
-          previousMonthIncome={previousMonthIncome}
-          expensesByCategory={expensesByCategory}
-          categoryStyles={categoryStyles}
-          formatMoney={formatMoney}
-        />
+      <BudgetTab
+        personalBudget={personalBudget}
+        previousMonthLabel={previousMonthLabel}
+        previousMonthIncome={previousMonthIncome}
+        monthlyExpensesByCategory={monthlyExpensesByCategory}
+        categoryStyles={categoryStyles}
+        formatMoney={formatMoney}
+      />
       )}
 
       {activeTab === "transactions" && (
@@ -1001,14 +835,23 @@ if (isLoading) {
       )}
 
       {activeTab === "goals" && (
-        <GoalsTab
-          emergencyFundTarget={emergencyFundTarget}
-          savingsTarget={savingsTarget}
-          investmentTarget={investmentTarget}
-          futureTarget={futureTarget}
-          formatMoney={formatMoney}
-        />
-      )}
+  <GoalsTab
+    emergencyFundTarget={emergencyFundTarget}
+    monthlySavingsTarget={monthlySavingsTarget}
+    monthlyInvestmentTarget={monthlyInvestmentTarget}
+    monthlyGoalsTarget={monthlyGoalsTarget}
+    currentSavings={currentSavings}
+    currentInvestment={currentInvestment}
+    savingsProgress={savingsProgress}
+    investmentProgress={investmentProgress}
+    longTermSavingsTarget={longTermSavingsTarget}
+    longTermInvestmentTarget={longTermInvestmentTarget}
+    longTermTarget={longTermTarget}
+    previousMonthLabel={previousMonthLabel}
+    previousMonthIncome={previousMonthIncome}
+    formatMoney={formatMoney}
+  />
+)}
     </div>
   </main>
 );

@@ -31,7 +31,8 @@ type SummaryTabProps = {
   savingsRate: string;
 
   budgetAlerts: BudgetAlert[];
-  topCategory: [string, number] | undefined;
+  monthlyTopCategory: [string, number] | undefined;
+  allTimeTopCategory: [string, number] | undefined;
 
   subscriptions: SubscriptionItem[];
   totalSubscriptions: number;
@@ -56,7 +57,8 @@ export function SummaryTab({
   periodExpenses,
   savingsRate,
   budgetAlerts,
-  topCategory,
+  monthlyTopCategory,
+  allTimeTopCategory,
   subscriptions,
   totalSubscriptions,
   formatMoney,
@@ -237,13 +239,23 @@ export function SummaryTab({
             </p>
           ))}
 
-          {topCategory && (
+          {monthlyTopCategory && (
             <p>
-              🎯 Tu mayor gasto ha sido{" "}
+              🎯 Este mes, tu mayor gasto ha sido{" "}
               <span className="font-semibold">
-                {topCategory[0]}
+                {monthlyTopCategory[0]}
               </span>{" "}
-              con {formatMoney(topCategory[1])}.
+              con {formatMoney(monthlyTopCategory[1])}.
+            </p>
+          )}
+
+          {allTimeTopCategory && (
+            <p>
+              🧭 En todo tu histórico, tu categoría de mayor gasto ha sido{" "}
+              <span className="font-semibold">
+                {allTimeTopCategory[0]}
+              </span>{" "}
+              con {formatMoney(allTimeTopCategory[1])}.
             </p>
           )}
         </div>

@@ -7,7 +7,7 @@ type BudgetTabProps = {
   personalBudget: PersonalBudgetItem[];
   previousMonthLabel: string;
   previousMonthIncome: number;
-  expensesByCategory: Record<string, number>;
+  monthlyExpensesByCategory: Record<string, number>;
   categoryStyles: CategoryStyles;
   formatMoney: (value: number) => string;
 };
@@ -16,7 +16,7 @@ export function BudgetTab({
   personalBudget,
   previousMonthLabel,
   previousMonthIncome,
-  expensesByCategory,
+  monthlyExpensesByCategory,
   categoryStyles,
   formatMoney,
 }: BudgetTabProps) {
@@ -122,7 +122,7 @@ export function BudgetTab({
         </h2>
 
         <div className="mt-6 space-y-4">
-          {Object.entries(expensesByCategory)
+          {Object.entries(monthlyExpensesByCategory)
             .sort((a, b) => b[1] - a[1])
             .map(([category, amount]) => (
               <div
