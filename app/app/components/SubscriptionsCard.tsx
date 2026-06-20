@@ -44,7 +44,7 @@ export function SubscriptionsCard({
             </div>
 
             <p className="mt-2 text-sm text-slate-400">
-              Se cobra el día {subscription.day} de cada mes
+              Se cobra el día {subscription.billing_day} de cada mes
             </p>
           </div>
         ))}

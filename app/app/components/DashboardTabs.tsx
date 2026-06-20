@@ -9,6 +9,7 @@ const tabs: { id: ActiveTab; label: string }[] = [
   { id: "summary", label: "📊 Resumen" },
   { id: "transactions", label: "💸 Movimientos" },
   { id: "budget", label: "📋 Presupuestos" },
+  { id: "subscriptions", label: "Suscripciones" },
   { id: "history", label: "📈 Histórico" },
   { id: "goals", label: "🎯 Objetivos" },
 ];

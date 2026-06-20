@@ -6,7 +6,6 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/formatters";
 
-
 import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardTabs } from "./components/DashboardTabs";
 import { SummaryTab } from "./components/SummaryTab";
@@ -18,6 +17,7 @@ import { calculateGoals } from "./utils/goals";
 import { getSortedTransactions } from "./utils/transactions";
 import { buildChartItems } from "./utils/chart";
 import { buildFiscalSummary } from "./utils/fiscal";
+import { SubscriptionsTab } from "./components/SubscriptionsTab";
 
 import {
   budgets,
@@ -40,6 +40,7 @@ import type {
   ActionStatus,
   ChartRange,
   SaveStatus,
+  SubscriptionItem,
   Transaction,
   TransactionFilter,
   TransactionSort,
@@ -68,6 +69,11 @@ export default function AppPage() {
   // ============================
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
+const [subscriptionName, setSubscriptionName] = useState("");
+const [subscriptionAmount, setSubscriptionAmount] = useState("");
+const [subscriptionBillingDay, setSubscriptionBillingDay] = useState("");
 
   // ============================
   // GRÁFICO PRINCIPAL
@@ -140,6 +146,7 @@ const sortedTransactions = getSortedTransactions({
 
 
       await loadTransactions(user.id);
+      await loadSubscriptions(user.id);
   
     } catch (error) {
       console.error("APP LOAD USER ERROR:", error);
@@ -195,6 +202,75 @@ const sortedTransactions = getSortedTransactions({
   setTransactions(data || []);
 }
 
+async function handleAddSubscription(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  if (!user) return;
+
+  const numericAmount = Number(subscriptionAmount);
+  const numericBillingDay = Number(subscriptionBillingDay);
+
+  if (
+    !subscriptionName.trim() ||
+    Number.isNaN(numericAmount) ||
+    numericAmount <= 0 ||
+    Number.isNaN(numericBillingDay) ||
+    numericBillingDay < 1 ||
+    numericBillingDay > 31
+  ) {
+    return;
+  }
+
+  const { error } = await supabase.from("subscriptions").insert({
+    user_id: user.id,
+    name: subscriptionName.trim(),
+    amount: numericAmount,
+    billing_day: numericBillingDay,
+  });
+
+  if (error) {
+    console.error("Error adding subscription:", error);
+    return;
+  }
+
+  setSubscriptionName("");
+  setSubscriptionAmount("");
+  setSubscriptionBillingDay("");
+
+  await loadSubscriptions(user.id);
+}
+
+async function handleDeleteSubscription(subscriptionId: number) {
+  if (!user) return;
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .delete()
+    .eq("id", subscriptionId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error deleting subscription:", error);
+    return;
+  }
+
+  await loadSubscriptions(user.id);
+}
+
+async function loadSubscriptions(userId: string) {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("billing_day", { ascending: true });
+
+  if (error) {
+    console.error("Error loading subscriptions:", error);
+    return;
+  }
+
+  setSubscriptions(data || []);
+}
 // ============================
 // CRUD DE MOVIMIENTOS
 // ============================
@@ -483,31 +559,8 @@ const budgetAlerts = calculateBudgetAlerts({
   monthlyTransactions,
 });
 
-const subscriptions = [
-  {
-    name: "Netflix",
-    amount: 10.99,
-    day: 5,
-  },
-  {
-    name: "Spotify",
-    amount: 11.99,
-    day: 12,
-  },
-  {
-    name: "ChatGPT",
-    amount: 20,
-    day: 18,
-  },
-  {
-    name: "Software",
-    amount: 49,
-    day: 25,
-  },
-];
-
 const totalSubscriptions = subscriptions.reduce(
-  (sum, subscription) => sum + subscription.amount,
+  (sum, subscription) => sum + Number(subscription.amount),
   0
 );
 
@@ -605,6 +658,22 @@ if (isLoading) {
           handleDeleteTransaction={handleDeleteTransaction}
         />
       )}
+
+      {activeTab === "subscriptions" && (
+  <SubscriptionsTab
+    subscriptions={subscriptions}
+    totalSubscriptions={totalSubscriptions}
+    subscriptionName={subscriptionName}
+    subscriptionAmount={subscriptionAmount}
+    subscriptionBillingDay={subscriptionBillingDay}
+    setSubscriptionName={setSubscriptionName}
+    setSubscriptionAmount={setSubscriptionAmount}
+    setSubscriptionBillingDay={setSubscriptionBillingDay}
+    handleAddSubscription={handleAddSubscription}
+    handleDeleteSubscription={handleDeleteSubscription}
+    formatMoney={formatMoney}
+  />
+)}
 
       {activeTab === "history" && (
         <HistoryTab

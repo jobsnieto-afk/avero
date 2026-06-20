@@ -3,7 +3,8 @@ export type ActiveTab =
   | "transactions"
   | "budget"
   | "history"
-  | "goals";
+  | "goals"
+  | "subscriptions";
 
 export type TransactionType = "income" | "expense";
 
@@ -58,9 +59,12 @@ export type FiscalInsight = {
 };
 
 export type SubscriptionItem = {
+  id: number;
+  user_id: string;
   name: string;
   amount: number;
-  day: string | number;
+  billing_day: number;
+  created_at: string;
 };
 
 export type ChartItem = {
