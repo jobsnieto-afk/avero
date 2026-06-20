@@ -16,7 +16,8 @@ import { HistoryTab } from "./components/HistoryTab";
 import { GoalsTab } from "./components/GoalsTab";
 import { calculateGoals } from "./utils/goals";
 import { getSortedTransactions } from "./utils/transactions";
-
+import { buildChartItems } from "./utils/chart";
+import { buildFiscalSummary } from "./utils/fiscal";
 
 import {
   budgets,
@@ -39,7 +40,6 @@ import type {
   ActionStatus,
   ChartRange,
   SaveStatus,
-  FiscalInsight,
   Transaction,
   TransactionFilter,
   TransactionSort,
@@ -305,14 +305,6 @@ async function handleUpdateTransaction(transactionId: number) {
     setActionStatus("idle");
 }, 3000);
 }
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 
 // ============================
 // CÁLCULOS DEL DASHBOARD
@@ -329,213 +321,29 @@ const totalExpenses = transactions
 
 const balance = totalIncome - totalExpenses;
 
-// ============================
-// COMPARATIVA POR AÑOS FISCALES
-// UK fiscal year: abril - marzo
-// ============================
-
-const fiscalYears = [
-  {
-    label: "2023-2024",
-    start: "2023-04-01",
-    end: "2024-03-31",
-  },
-  {
-    label: "2024-2025",
-    start: "2024-04-01",
-    end: "2025-03-31",
-  },
-  {
-    label: "2025-2026",
-    start: "2025-04-01",
-    end: "2026-03-31",
-  },
-];
-
-const fiscalSummary = fiscalYears.map((year) => {
-  
-  const yearTransactions = transactions.filter((transaction) => {
-    const date = new Date(transaction.transaction_date);
-
-    return (
-      date >= new Date(year.start) &&
-      date <= new Date(year.end)
-    );
-  });
-
-
-  const income = yearTransactions
-    .filter((transaction) => transaction.type === "income")
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-  const expenses = yearTransactions
-    .filter((transaction) => transaction.type === "expense")
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-  const balance = income - expenses;
-
-  const margin =
-    income > 0 ? (balance / income) * 100 : 0;
-
-  return {
-    label: year.label,
-    income,
-    expenses,
-    balance,
-    margin,
-  };
+const {
+  fiscalSummary,
+  latestFiscalYear,
+  incomeGrowth,
+  expenseGrowth,
+  balanceGrowth,
+  fiscalInsight,
+  topFiscalExpenses,
+} = buildFiscalSummary({
+  transactions,
+  categoryStyles,
 });
-
-const latestFiscalYear =
-  fiscalSummary[fiscalSummary.length - 1];
-
-const previousFiscalYear =
-  fiscalSummary[fiscalSummary.length - 2];
-
-  const incomeGrowth =
-  previousFiscalYear?.income
-    ? (
-        ((latestFiscalYear.income -
-          previousFiscalYear.income) /
-          previousFiscalYear.income) *
-        100
-      )
-    : 0;
-
-const expenseGrowth =
-  previousFiscalYear?.expenses
-    ? (
-        ((latestFiscalYear.expenses -
-          previousFiscalYear.expenses) /
-          previousFiscalYear.expenses) *
-        100
-      )
-    : 0;
-
-const balanceGrowth =
-  previousFiscalYear?.balance
-    ? (
-        ((latestFiscalYear.balance -
-          previousFiscalYear.balance) /
-          previousFiscalYear.balance) *
-        100
-      )
-    : 0;
-
-    const fiscalInsight: FiscalInsight =
-  expenseGrowth > incomeGrowth
-    ? {
-        tone: "warning",
-        message:
-          "Tus gastos crecieron más rápido que tus ingresos durante el último ejercicio fiscal.",
-        detail: `Los ingresos crecieron un ${incomeGrowth.toFixed(
-          1
-        )}%, mientras que los gastos crecieron un ${expenseGrowth.toFixed(
-          1
-        )}%.`,
-      }
-    : {
-        tone: "positive",
-        message:
-          "Tus ingresos crecieron más rápido que tus gastos durante el último ejercicio fiscal.",
-        detail: `Los ingresos crecieron un ${incomeGrowth.toFixed(
-          1
-        )}%, mientras que los gastos crecieron un ${expenseGrowth.toFixed(
-          1
-        )}%.`,
-      };
-
-      const latestFiscalYearTransactions = transactions.filter((transaction) => {
-  const date = new Date(transaction.transaction_date);
-
-  return (
-    date >= new Date(fiscalYears[fiscalYears.length - 1].start) &&
-    date <= new Date(fiscalYears[fiscalYears.length - 1].end)
-  );
-});
-
-const latestFiscalExpensesByCategory = latestFiscalYearTransactions
-  .filter((transaction) => transaction.type === "expense")
-  .reduce((acc, transaction) => {
-    const category = transaction.category;
-
-    acc[category] =
-      (acc[category] || 0) + Number(transaction.amount);
-
-    return acc;
-  }, {} as Record<string, number>);
-
-const topFiscalExpenses = Object.entries(latestFiscalExpensesByCategory)
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 3);
 
 // ============================
 // DATOS DEL GRÁFICO PRINCIPAL
 // Agrupa ingresos, gastos y balance por mes.
 // ============================
 
-const monthsToShow =
-  chartRange === "1m"
-    ? 1
-    : chartRange === "3m"
-    ? 3
-    : chartRange === "6m"
-    ? 6
-    : chartRange === "12m"
-    ? 12
-    : 999;
 
-const chartTransactions =
-  chartRange === "all"
-    ? transactions
-    : transactions.filter((transaction) => {
-        const transactionDate = new Date(transaction.transaction_date);
-        const limitDate = new Date();
-
-        limitDate.setMonth(limitDate.getMonth() - monthsToShow);
-
-        return transactionDate >= limitDate;
-      });
-
-const chartData = chartTransactions.reduce(
-  (acc, transaction) => {
-    const date = new Date(transaction.transaction_date);
-    const monthKey = date.toLocaleDateString("es-ES", {
-      month: "short",
-      year: "2-digit",
-    });
-
-    if (!acc[monthKey]) {
-  acc[monthKey] = {
-    date: new Date(date.getFullYear(), date.getMonth(), 1),
-    income: 0,
-    expenses: 0,
-  };
-}
-
-    if (transaction.type === "income") {
-      acc[monthKey].income += Number(transaction.amount);
-    } else {
-      acc[monthKey].expenses += Number(transaction.amount);
-    }
-
-    return acc;
-  },
-  {} as Record<
-  string,
-  { date: Date; income: number; expenses: number }
->
-);
-
-const chartItems = Object.entries(chartData)
-  .map(([month, values]) => ({
-    month,
-    date: values.date,
-    income: values.income,
-    expenses: values.expenses,
-    balance: values.income - values.expenses,
-  }))
-  .sort((a, b) => a.date.getTime() - b.date.getTime());
+const chartItems = buildChartItems({
+  transactions,
+  chartRange,
+});
 
   // ============================
 // INSIGHTS DE AVERO
@@ -646,28 +454,6 @@ const allTimeTopCategory =
 // ============================
 // PRESUPUESTOS
 // ============================
-
-
-const personalBudgetCategories: Record<string, string[]> = {
-  "Necesidades básicas": [
-    "comida",
-    "casa",
-    "coche",
-    "gasolina",
-    "impuestos",
-  ],
-
-  Ahorro: ["ahorro"],
-
-  Inversión: ["inversion"],
-
-  Educación: ["educacion"],
-
-  Entretenimiento: [
-    "ocio",
-    "suscripciones",
-  ],
-};
 
 const personalBudget = calculatePersonalBudget({
   previousMonthIncome,
