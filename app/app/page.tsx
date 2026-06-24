@@ -623,6 +623,19 @@ const totalSubscriptions = subscriptions.reduce(
   0
 );
 
+const annualSubscriptions = totalSubscriptions * 12;
+
+const subscriptionsExpensePercentage =
+  monthlyExpenses > 0
+    ? Math.min((totalSubscriptions / monthlyExpenses) * 100, 100)
+    : 0;
+
+const monthlyBalanceAfterSubscriptions =
+  monthlyIncome - monthlyExpenses - totalSubscriptions;
+
+  
+
+
 if (isLoading) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050816] text-white">
@@ -720,28 +733,33 @@ if (isLoading) {
 
       {activeTab === "subscriptions" && (
   <SubscriptionsTab
-    subscriptions={subscriptions}
-    totalSubscriptions={totalSubscriptions}
-    subscriptionName={subscriptionName}
-    subscriptionAmount={subscriptionAmount}
-    subscriptionBillingDay={subscriptionBillingDay}
-    setSubscriptionName={setSubscriptionName}
-    setSubscriptionAmount={setSubscriptionAmount}
-    setSubscriptionBillingDay={setSubscriptionBillingDay}
-    handleAddSubscription={handleAddSubscription}
-    handleDeleteSubscription={handleDeleteSubscription}
-    editingSubscriptionId={editingSubscriptionId}
-    editingSubscriptionName={editingSubscriptionName}
-    editingSubscriptionAmount={editingSubscriptionAmount}
-    editingSubscriptionBillingDay={editingSubscriptionBillingDay}
-    setEditingSubscriptionName={setEditingSubscriptionName}
-    setEditingSubscriptionAmount={setEditingSubscriptionAmount}
-    setEditingSubscriptionBillingDay={setEditingSubscriptionBillingDay}
-    handleStartEditSubscription={handleStartEditSubscription}
-    handleCancelEditSubscription={handleCancelEditSubscription}
-    handleUpdateSubscription={handleUpdateSubscription}
-    formatMoney={formatMoney}
-  />
+  subscriptions={subscriptions}
+  totalSubscriptions={totalSubscriptions}
+  annualSubscriptions={annualSubscriptions}
+  subscriptionsExpensePercentage={subscriptionsExpensePercentage}
+  monthlyBalanceAfterSubscriptions={monthlyBalanceAfterSubscriptions}
+  monthlyIncome={monthlyIncome}
+  monthlyExpenses={monthlyExpenses}
+  subscriptionName={subscriptionName}
+  subscriptionAmount={subscriptionAmount}
+  subscriptionBillingDay={subscriptionBillingDay}
+  setSubscriptionName={setSubscriptionName}
+  setSubscriptionAmount={setSubscriptionAmount}
+  setSubscriptionBillingDay={setSubscriptionBillingDay}
+  handleAddSubscription={handleAddSubscription}
+  handleDeleteSubscription={handleDeleteSubscription}
+  editingSubscriptionId={editingSubscriptionId}
+  editingSubscriptionName={editingSubscriptionName}
+  editingSubscriptionAmount={editingSubscriptionAmount}
+  editingSubscriptionBillingDay={editingSubscriptionBillingDay}
+  setEditingSubscriptionName={setEditingSubscriptionName}
+  setEditingSubscriptionAmount={setEditingSubscriptionAmount}
+  setEditingSubscriptionBillingDay={setEditingSubscriptionBillingDay}
+  handleStartEditSubscription={handleStartEditSubscription}
+  handleCancelEditSubscription={handleCancelEditSubscription}
+  handleUpdateSubscription={handleUpdateSubscription}
+  formatMoney={formatMoney}
+/>
 )}
 
       {activeTab === "history" && (

@@ -3,6 +3,11 @@ import type { SubscriptionItem } from "../types";
 type SubscriptionsTabProps = {
   subscriptions: SubscriptionItem[];
   totalSubscriptions: number;
+  annualSubscriptions: number;
+  subscriptionsExpensePercentage: number;
+  monthlyBalanceAfterSubscriptions: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
 
   subscriptionName: string;
   subscriptionAmount: string;
@@ -29,14 +34,24 @@ type SubscriptionsTabProps = {
   handleUpdateSubscription: (subscriptionId: number) => void;
 
   formatMoney: (value: number) => string;
+
+  
+
+  
 };
 
 export function SubscriptionsTab({
   subscriptions,
   totalSubscriptions,
+  annualSubscriptions,
+  subscriptionsExpensePercentage,
+  monthlyBalanceAfterSubscriptions,
+  monthlyIncome,
+  monthlyExpenses,
   subscriptionName,
   subscriptionAmount,
   subscriptionBillingDay,
+  
   setSubscriptionName,
   setSubscriptionAmount,
   setSubscriptionBillingDay,
@@ -53,6 +68,7 @@ export function SubscriptionsTab({
   handleCancelEditSubscription,
   handleUpdateSubscription,
   formatMoney,
+  
 }: SubscriptionsTabProps) {
   return (
     <section className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -76,6 +92,43 @@ export function SubscriptionsTab({
             {formatMoney(totalSubscriptions)}
           </p>
         </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+    <p className="text-xs text-slate-500">Coste anual</p>
+    <p className="mt-2 text-lg font-semibold text-white">
+      {formatMoney(annualSubscriptions)}
+    </p>
+  </div>
+
+  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+    <p className="text-xs text-slate-500">Peso sobre gastos</p>
+    <p className="mt-2 text-lg font-semibold text-white">
+      {monthlyExpenses > 0
+        ? `${subscriptionsExpensePercentage.toFixed(1)}%`
+        : "Sin gastos"}
+    </p>
+  </div>
+
+  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+    <p className="text-xs text-slate-500">Margen después</p>
+    <p className="mt-2 text-lg font-semibold text-white">
+      {formatMoney(monthlyBalanceAfterSubscriptions)}
+    </p>
+  </div>
+</div>
+
+<div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+  <p className="text-xs text-slate-500">Lectura rápida</p>
+  <p className="mt-2 text-sm leading-6 text-slate-400">
+    Este mes has ingresado {formatMoney(monthlyIncome)} y tus gastos registrados
+    son {formatMoney(monthlyExpenses)}. Tus suscripciones representan{" "}
+    {monthlyExpenses > 0
+      ? `${subscriptionsExpensePercentage.toFixed(1)}%`
+      : "0%"}{" "}
+    de esos gastos.
+  </p>
+</div>
 
         <form onSubmit={handleAddSubscription} className="mt-6 space-y-4">
           <div>
