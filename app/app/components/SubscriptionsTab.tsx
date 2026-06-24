@@ -34,10 +34,6 @@ type SubscriptionsTabProps = {
   handleUpdateSubscription: (subscriptionId: number) => void;
 
   formatMoney: (value: number) => string;
-
-  
-
-  
 };
 
 export function SubscriptionsTab({
@@ -51,7 +47,6 @@ export function SubscriptionsTab({
   subscriptionName,
   subscriptionAmount,
   subscriptionBillingDay,
-  
   setSubscriptionName,
   setSubscriptionAmount,
   setSubscriptionBillingDay,
@@ -92,6 +87,8 @@ export function SubscriptionsTab({
             {formatMoney(totalSubscriptions)}
           </p>
         </div>
+
+        
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
   <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -288,7 +285,7 @@ export function SubscriptionsTab({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-medium text-white">
               {subscription.name}
@@ -298,7 +295,7 @@ export function SubscriptionsTab({
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm font-semibold text-cyan-300">
               {formatMoney(Number(subscription.amount))}
             </p>

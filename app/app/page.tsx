@@ -680,6 +680,10 @@ if (isLoading) {
           subscriptions={subscriptions}
           totalSubscriptions={totalSubscriptions}
           formatMoney={formatMoney}
+          annualSubscriptions={annualSubscriptions}
+          subscriptionsExpensePercentage={subscriptionsExpensePercentage}
+          monthlyBalanceAfterSubscriptions={monthlyBalanceAfterSubscriptions}
+          
         />
 )}
 

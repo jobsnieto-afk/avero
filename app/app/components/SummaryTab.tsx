@@ -37,6 +37,10 @@ type SummaryTabProps = {
   subscriptions: SubscriptionItem[];
   totalSubscriptions: number;
 
+  annualSubscriptions: number;
+  subscriptionsExpensePercentage: number;
+  monthlyBalanceAfterSubscriptions: number;
+
   formatMoney: (value: number) => string;
 };
 
@@ -61,6 +65,9 @@ export function SummaryTab({
   allTimeTopCategory,
   subscriptions,
   totalSubscriptions,
+  annualSubscriptions,
+  subscriptionsExpensePercentage,
+  monthlyBalanceAfterSubscriptions,
   formatMoney,
 }: SummaryTabProps) {
   const chartData = chartItems.map((item) => ({
@@ -264,6 +271,9 @@ export function SummaryTab({
       <SubscriptionsCard
         subscriptions={subscriptions}
         totalSubscriptions={totalSubscriptions}
+        annualSubscriptions={annualSubscriptions}
+        subscriptionsExpensePercentage={subscriptionsExpensePercentage}
+        monthlyBalanceAfterSubscriptions={monthlyBalanceAfterSubscriptions}
         formatMoney={formatMoney}
       />
     </>
