@@ -75,6 +75,14 @@ const [subscriptionName, setSubscriptionName] = useState("");
 const [subscriptionAmount, setSubscriptionAmount] = useState("");
 const [subscriptionBillingDay, setSubscriptionBillingDay] = useState("");
 
+const [editingSubscriptionId, setEditingSubscriptionId] = useState<number | null>(
+  null
+);
+const [editingSubscriptionName, setEditingSubscriptionName] = useState("");
+const [editingSubscriptionAmount, setEditingSubscriptionAmount] = useState("");
+const [editingSubscriptionBillingDay, setEditingSubscriptionBillingDay] =
+  useState("");
+
   // ============================
   // GRÁFICO PRINCIPAL
   // 6 meses, 12 meses o histórico
@@ -236,6 +244,57 @@ async function handleAddSubscription(event: React.FormEvent<HTMLFormElement>) {
   setSubscriptionName("");
   setSubscriptionAmount("");
   setSubscriptionBillingDay("");
+
+  await loadSubscriptions(user.id);
+}
+
+function handleStartEditSubscription(subscription: SubscriptionItem) {
+  setEditingSubscriptionId(subscription.id);
+  setEditingSubscriptionName(subscription.name);
+  setEditingSubscriptionAmount(String(subscription.amount));
+  setEditingSubscriptionBillingDay(String(subscription.billing_day));
+}
+
+function handleCancelEditSubscription() {
+  setEditingSubscriptionId(null);
+  setEditingSubscriptionName("");
+  setEditingSubscriptionAmount("");
+  setEditingSubscriptionBillingDay("");
+}
+
+async function handleUpdateSubscription(subscriptionId: number) {
+  if (!user) return;
+
+  const numericAmount = Number(editingSubscriptionAmount);
+  const numericBillingDay = Number(editingSubscriptionBillingDay);
+
+  if (
+    !editingSubscriptionName.trim() ||
+    Number.isNaN(numericAmount) ||
+    numericAmount <= 0 ||
+    Number.isNaN(numericBillingDay) ||
+    numericBillingDay < 1 ||
+    numericBillingDay > 31
+  ) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      name: editingSubscriptionName.trim(),
+      amount: numericAmount,
+      billing_day: numericBillingDay,
+    })
+    .eq("id", subscriptionId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating subscription:", error);
+    return;
+  }
+
+  handleCancelEditSubscription();
 
   await loadSubscriptions(user.id);
 }
@@ -671,6 +730,16 @@ if (isLoading) {
     setSubscriptionBillingDay={setSubscriptionBillingDay}
     handleAddSubscription={handleAddSubscription}
     handleDeleteSubscription={handleDeleteSubscription}
+    editingSubscriptionId={editingSubscriptionId}
+    editingSubscriptionName={editingSubscriptionName}
+    editingSubscriptionAmount={editingSubscriptionAmount}
+    editingSubscriptionBillingDay={editingSubscriptionBillingDay}
+    setEditingSubscriptionName={setEditingSubscriptionName}
+    setEditingSubscriptionAmount={setEditingSubscriptionAmount}
+    setEditingSubscriptionBillingDay={setEditingSubscriptionBillingDay}
+    handleStartEditSubscription={handleStartEditSubscription}
+    handleCancelEditSubscription={handleCancelEditSubscription}
+    handleUpdateSubscription={handleUpdateSubscription}
     formatMoney={formatMoney}
   />
 )}

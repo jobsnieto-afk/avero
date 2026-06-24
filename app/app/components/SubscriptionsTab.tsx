@@ -15,6 +15,19 @@ type SubscriptionsTabProps = {
   handleAddSubscription: (event: React.FormEvent<HTMLFormElement>) => void;
   handleDeleteSubscription: (subscriptionId: number) => void;
 
+  editingSubscriptionId: number | null;
+  editingSubscriptionName: string;
+  editingSubscriptionAmount: string;
+  editingSubscriptionBillingDay: string;
+
+  setEditingSubscriptionName: (value: string) => void;
+  setEditingSubscriptionAmount: (value: string) => void;
+  setEditingSubscriptionBillingDay: (value: string) => void;
+
+  handleStartEditSubscription: (subscription: SubscriptionItem) => void;
+  handleCancelEditSubscription: () => void;
+  handleUpdateSubscription: (subscriptionId: number) => void;
+
   formatMoney: (value: number) => string;
 };
 
@@ -29,6 +42,16 @@ export function SubscriptionsTab({
   setSubscriptionBillingDay,
   handleAddSubscription,
   handleDeleteSubscription,
+  editingSubscriptionId,
+  editingSubscriptionName,
+  editingSubscriptionAmount,
+  editingSubscriptionBillingDay,
+  setEditingSubscriptionName,
+  setEditingSubscriptionAmount,
+  setEditingSubscriptionBillingDay,
+  handleStartEditSubscription,
+  handleCancelEditSubscription,
+  handleUpdateSubscription,
   formatMoney,
 }: SubscriptionsTabProps) {
   return (
@@ -136,35 +159,118 @@ export function SubscriptionsTab({
               </p>
             </div>
           ) : (
-            subscriptions.map((subscription) => (
-              <div
-                key={subscription.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-950/60 p-4"
-              >
-                <div>
-                  <p className="font-medium text-white">
-                    {subscription.name}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Día {subscription.billing_day} de cada mes
-                  </p>
-                </div>
+            subscriptions.map((subscription) => {
+  const isEditing = editingSubscriptionId === subscription.id;
 
-                <div className="flex items-center gap-4">
-                  <p className="text-sm font-semibold text-cyan-300">
-                    {formatMoney(Number(subscription.amount))}
-                  </p>
+  return (
+    <div
+      key={subscription.id}
+      className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+    >
+      {isEditing ? (
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-xs text-slate-400">
+              Nombre
+            </label>
+            <input
+              value={editingSubscriptionName}
+              onChange={(event) =>
+                setEditingSubscriptionName(event.target.value)
+              }
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/60"
+            />
+          </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteSubscription(subscription.id)}
-                    className="rounded-full border border-rose-400/20 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-400/10"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-xs text-slate-400">
+                Importe mensual
+              </label>
+              <input
+                value={editingSubscriptionAmount}
+                onChange={(event) =>
+                  setEditingSubscriptionAmount(event.target.value)
+                }
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/60"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs text-slate-400">
+                Día de cobro
+              </label>
+              <input
+                value={editingSubscriptionBillingDay}
+                onChange={(event) =>
+                  setEditingSubscriptionBillingDay(event.target.value)
+                }
+                type="number"
+                min="1"
+                max="31"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/60"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => handleUpdateSubscription(subscription.id)}
+              className="rounded-full bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200"
+            >
+              Guardar cambios
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCancelEditSubscription}
+              className="rounded-full border border-white/10 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium text-white">
+              {subscription.name}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Día {subscription.billing_day} de cada mes
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <p className="text-sm font-semibold text-cyan-300">
+              {formatMoney(Number(subscription.amount))}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => handleStartEditSubscription(subscription)}
+              className="rounded-full border border-cyan-400/20 px-3 py-1.5 text-xs font-medium text-cyan-300 transition hover:bg-cyan-400/10"
+            >
+              Editar
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDeleteSubscription(subscription.id)}
+              className="rounded-full border border-rose-400/20 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-400/10"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+})
           )}
         </div>
       </div>
