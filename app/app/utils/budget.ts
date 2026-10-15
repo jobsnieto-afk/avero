@@ -11,6 +11,7 @@ type BudgetDefinition = {
 
 type CalculatePersonalBudgetParams = {
   previousMonthIncome: number;
+  previousMonthTransactions: Transaction[];
   monthlyTransactions: Transaction[];
 };
 
@@ -42,12 +43,36 @@ const budgetDefinitions: BudgetDefinition[] = [
   },
 ];
 
+const preBudgetCategories = [
+  "comida",
+  "casa",
+  "coche",
+  "gasolina",
+  "impuestos",
+  "software",
+];
+
 export function calculatePersonalBudget({
   previousMonthIncome,
+  previousMonthTransactions,
   monthlyTransactions,
 }: CalculatePersonalBudgetParams): PersonalBudgetItem[] {
+  const previousMonthPreBudgetExpenses = previousMonthTransactions
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" &&
+        preBudgetCategories.includes(transaction.category)
+    )
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+  const previousMonthAvailableIncome = Math.max(
+    previousMonthIncome - previousMonthPreBudgetExpenses,
+    0
+  );
+
   return budgetDefinitions.map((definition) => {
-    const limit = previousMonthIncome * (definition.percentage / 100);
+    const limit =
+      previousMonthAvailableIncome * (definition.percentage / 100);
 
     const spent = monthlyTransactions
       .filter(

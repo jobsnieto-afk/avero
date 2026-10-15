@@ -35,6 +35,11 @@ import {
   calculatePersonalBudget,
 } from "./utils/budget";
 
+import {
+  generateDemoTransactions,
+  generateDemoSubscriptions,
+} from "./data/demoData";
+
 import type {
   ActiveTab,
   ActionStatus,
@@ -122,6 +127,12 @@ const [editingSubscriptionBillingDay, setEditingSubscriptionBillingDay] =
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const [editingAmount, setEditingAmount] = useState("");
     const [editingNote, setEditingNote] = useState("");
+
+// ============================
+  // ESTADOS DE CARGA DATOS DEMO
+  // ============================
+    const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+    const [demoMessage, setDemoMessage] = useState("");
 
 
 
@@ -329,6 +340,124 @@ async function loadSubscriptions(userId: string) {
   }
 
   setSubscriptions(data || []);
+}
+
+// ============================
+// CARGA DATOS DEMOD
+// ============================
+async function handleLoadDemoData() {
+  if (!user || isLoadingDemo) return;
+
+  setIsLoadingDemo(true);
+  setDemoMessage("");
+
+  try {
+    const { count: transactionCount, error: transactionCheckError } =
+      await supabase
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_demo", true);
+
+    if (transactionCheckError) throw transactionCheckError;
+
+    const { count: subscriptionCount, error: subscriptionCheckError } =
+      await supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_demo", true);
+
+    if (subscriptionCheckError) throw subscriptionCheckError;
+
+    if ((transactionCount ?? 0) > 0 || (subscriptionCount ?? 0) > 0) {
+      setDemoMessage(
+        "Ya existen datos demo en tu cuenta. Elimínalos antes de volver a cargarlos."
+      );
+      return;
+    }
+
+    const demoTransactions = generateDemoTransactions().map((item) => ({
+      ...item,
+      user_id: user.id,
+    }));
+
+    const demoSubscriptions = generateDemoSubscriptions().map((item) => ({
+      ...item,
+      user_id: user.id,
+    }));
+
+    const { error: transactionsError } = await supabase
+      .from("transactions")
+      .insert(demoTransactions);
+
+    if (transactionsError) throw transactionsError;
+
+    const { error: subscriptionsError } = await supabase
+      .from("subscriptions")
+      .insert(demoSubscriptions);
+
+    if (subscriptionsError) throw subscriptionsError;
+
+    await Promise.all([
+      loadTransactions(user.id),
+      loadSubscriptions(user.id),
+    ]);
+
+    setDemoMessage("Datos de demostración cargados correctamente.");
+  } catch (error) {
+    console.error("Error loading demo data:", error);
+    setDemoMessage(
+      "No se pudo completar la carga. Comprueba los datos antes de reintentarlo."
+    );
+  } finally {
+    setIsLoadingDemo(false);
+  }
+}
+// ============================
+// ELIMINAR DATOS DEMO
+// ============================
+async function handleClearDemoData() {
+  if (!user || isLoadingDemo) return;
+
+  const confirmed = window.confirm(
+    "¿Quieres eliminar todos los datos demo? Tus datos reales no se borrarán."
+  );
+
+  if (!confirmed) return;
+
+  setIsLoadingDemo(true);
+  setDemoMessage("");
+
+  try {
+    const { error: transactionsError } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("is_demo", true);
+
+    if (transactionsError) throw transactionsError;
+
+    const { error: subscriptionsError } = await supabase
+      .from("subscriptions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("is_demo", true);
+
+    if (subscriptionsError) throw subscriptionsError;
+
+    await Promise.all([
+      loadTransactions(user.id),
+      loadSubscriptions(user.id),
+    ]);
+
+    setDemoMessage("Datos de demostración eliminados correctamente.");
+  } catch (error) {
+    console.error("Error clearing demo data:", error);
+    setDemoMessage("No se pudieron eliminar todos los datos demo.");
+  } finally {
+    setIsLoadingDemo(false);
+  }
 }
 // ============================
 // CRUD DE MOVIMIENTOS
@@ -550,6 +679,23 @@ const monthlyIncome = monthlyTransactions
   .filter((transaction) => transaction.type === "income")
   .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
+  const previousMonthTransactions = transactions.filter((transaction) => {
+  const transactionDate = new Date(transaction.transaction_date);
+  const now = new Date();
+
+  const previousMonth = now.getMonth() - 1;
+  const previousMonthYear =
+    previousMonth < 0 ? now.getFullYear() - 1 : now.getFullYear();
+
+  const normalizedPreviousMonth =
+    previousMonth < 0 ? 11 : previousMonth;
+
+  return (
+    transactionDate.getMonth() === normalizedPreviousMonth &&
+    transactionDate.getFullYear() === previousMonthYear
+  );
+});
+
 const previousMonthIncome = transactions
   .filter((transaction) => {
     const date = new Date(
@@ -592,6 +738,7 @@ const allTimeTopCategory =
 
 const personalBudget = calculatePersonalBudget({
   previousMonthIncome,
+  previousMonthTransactions,
   monthlyTransactions,
 });
 
@@ -651,6 +798,32 @@ if (isLoading) {
         email={email}
         handleLogout={handleLogout}
       />
+
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+  <button
+    type="button"
+    onClick={handleLoadDemoData}
+    disabled={isLoadingDemo}
+    className="rounded-xl bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50"
+  >
+    {isLoadingDemo ? "Procesando..." : "Cargar datos demo"}
+  </button>
+
+  <button
+    type="button"
+    onClick={handleClearDemoData}
+    disabled={isLoadingDemo}
+    className="rounded-xl border border-white/10 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+  >
+    Eliminar datos demo
+  </button>
+</div>
+
+{demoMessage && (
+  <p role="status" className="mt-3 text-sm text-slate-400">
+    {demoMessage}
+  </p>
+)}
 
       <DashboardTabs
         activeTab={activeTab}
