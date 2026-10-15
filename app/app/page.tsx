@@ -134,6 +134,8 @@ const [editingSubscriptionBillingDay, setEditingSubscriptionBillingDay] =
     const [isLoadingDemo, setIsLoadingDemo] = useState(false);
     const [demoMessage, setDemoMessage] = useState("");
 
+    const [hasDemoData, setHasDemoData] = useState(false);
+
 
 
 const sortedTransactions = getSortedTransactions({
@@ -166,6 +168,7 @@ const sortedTransactions = getSortedTransactions({
 
       await loadTransactions(user.id);
       await loadSubscriptions(user.id);
+      await checkDemoData(user.id);
   
     } catch (error) {
       console.error("APP LOAD USER ERROR:", error);
@@ -404,6 +407,8 @@ async function handleLoadDemoData() {
       loadSubscriptions(user.id),
     ]);
 
+    await checkDemoData(user.id);
+
     setDemoMessage("Datos de demostración cargados correctamente.");
   } catch (error) {
     console.error("Error loading demo data:", error);
@@ -451,6 +456,8 @@ async function handleClearDemoData() {
       loadSubscriptions(user.id),
     ]);
 
+    await checkDemoData(user.id);
+
     setDemoMessage("Datos de demostración eliminados correctamente.");
   } catch (error) {
     console.error("Error clearing demo data:", error);
@@ -458,6 +465,35 @@ async function handleClearDemoData() {
   } finally {
     setIsLoadingDemo(false);
   }
+}
+
+async function checkDemoData(userId: string) {
+  const [transactionsResult, subscriptionsResult] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_demo", true),
+
+    supabase
+      .from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_demo", true),
+  ]);
+
+  if (transactionsResult.error || subscriptionsResult.error) {
+    console.error(
+      "Error checking demo data:",
+      transactionsResult.error || subscriptionsResult.error
+    );
+    return;
+  }
+
+  setHasDemoData(
+    (transactionsResult.count ?? 0) > 0 ||
+    (subscriptionsResult.count ?? 0) > 0
+  );
 }
 // ============================
 // CRUD DE MOVIMIENTOS
@@ -798,6 +834,24 @@ if (isLoading) {
         email={email}
         handleLogout={handleLogout}
       />
+
+      {hasDemoData && (
+  <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.05] px-5 py-4">
+    <span className="relative flex h-2.5 w-2.5">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-30" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400" />
+    </span>
+
+    <div>
+      <p className="text-sm font-semibold text-white">
+        Modo demostración activo
+      </p>
+      <p className="mt-1 text-xs text-slate-400">
+        Estás visualizando datos ficticios para explorar las funcionalidades de AVERO.
+      </p>
+    </div>
+  </div>
+)}
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
   <button
